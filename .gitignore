@@ -99,3 +99,11 @@ $RECYCLE.BIN/
 *.sublime-project
 *.sublime-workspace
 *.code-workspace
+
+# ==========================================
+# Local Planning & Prompt Documents
+# ==========================================
+finance-support-plan/
+프롬프트_*.txt
+*finance_support*.txt
+
