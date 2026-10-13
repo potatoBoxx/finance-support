@@ -1,20 +1,101 @@
-# Virtual Environment
+# ==========================================
+# Streamlit & Secrets (NEVER commit secrets!)
+# ==========================================
+.streamlit/secrets.toml
+.streamlit/secrets.toml*
+!.streamlit/secrets.toml.example
+**/.streamlit/secrets.toml
+**/.streamlit/secrets.toml*
+!**/.streamlit/secrets.toml.example
+
+# Environment Variables & Credentials
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+service_account*.json
+
+# ==========================================
+# Virtual Environments (uv, venv, conda)
+# ==========================================
 .venv/
 env/
 venv/
+ENV/
+env.bak/
+venv.bak/
+.uv/
 
-# Streamlit secrets (NEVER commit secrets.toml)
-.streamlit/secrets.toml
-
-# Python cache
+# ==========================================
+# Python Bytecode & Cache
+# ==========================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.pytest_cache/
+*.pyo
+*.pyd
 
-# OS and IDE files
+# Distribution / Packaging
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+
+# ==========================================
+# Testing & Code Quality
+# ==========================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+
+# ==========================================
+# Database & Temporary / Log Files
+# ==========================================
+*.sqlite
+*.sqlite3
+*.db
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+scratch/
+tmp/
+temp/
+
+# ==========================================
+# Operating System & IDE Files
+# ==========================================
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+
+# IDE / Editors
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
