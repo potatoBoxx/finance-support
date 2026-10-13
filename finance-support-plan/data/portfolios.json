@@ -1,0 +1,54 @@
+{
+  "users": {
+    "demo": {
+      "pin": "1234",
+      "user_name": "데모 투자자",
+      "holdings": [
+        {
+          "ticker": "005930",
+          "name": "삼성전자",
+          "market": "KRX",
+          "currency": "KRW",
+          "buy_price": 71500,
+          "quantity": 50,
+          "target_price": 85000,
+          "stop_loss_price": 66000,
+          "memo": "AI 반도체 HBM 공급 확대 모멘텀"
+        },
+        {
+          "ticker": "000660",
+          "name": "SK하이닉스",
+          "market": "KRX",
+          "currency": "KRW",
+          "buy_price": 178000,
+          "quantity": 25,
+          "target_price": 230000,
+          "stop_loss_price": 160000,
+          "memo": "HBM3E 주도권 및 D램 흑자 지속"
+        },
+        {
+          "ticker": "005380",
+          "name": "현대차",
+          "market": "KRX",
+          "currency": "KRW",
+          "buy_price": 242000,
+          "quantity": 15,
+          "target_price": 290000,
+          "stop_loss_price": 220000,
+          "memo": "밸류업 수혜 및 하이브리드 판매 호조"
+        },
+        {
+          "ticker": "NVDA",
+          "name": "NVIDIA",
+          "market": "US",
+          "currency": "USD",
+          "buy_price": 118.5,
+          "quantity": 30,
+          "target_price": 150.0,
+          "stop_loss_price": 105.0,
+          "memo": "차세대 블랙웰 아키텍처 수요 견조"
+        }
+      ]
+    }
+  }
+}

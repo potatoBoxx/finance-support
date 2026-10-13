@@ -1,0 +1,2412 @@
+/* ==========================================================================
+   FinScope 반응형 대시보드 커스텀 스타일시트
+   ========================================================================== */
+
+/* 1. 글로벌 모바일 가로 스크롤 방지 및 타이포그래피 */
+html, body, [data-testid="stAppViewContainer"] {
+    overflow-x: hidden !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #F8FAFC;
+    word-break: keep-all;
+    scroll-behavior: smooth;
+}
+
+#portfolio-top {
+    position: relative;
+    top: -20px;
+    height: 0;
+    width: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, strong, b,
+.card-title, .fin-card h1, .fin-card h2, .fin-card h3, .fin-card h4, .fin-card h5,
+.portfolio-news-link, .briefing-item, .page-hero-title, .page-sub-title {
+    word-break: keep-all !important;
+    letter-spacing: -0.3px;
+}
+
+.page-hero-title {
+    font-size: 2.1rem;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -0.5px !important;
+}
+
+.page-sub-title {
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.5px !important;
+}
+
+/* 메인 컨테이너 여백 최적화 (Streamlit 상단 고정 헤더 영역 확보) */
+.main .block-container,
+.block-container,
+[data-testid="stMainBlockContainer"] {
+    padding-top: 3.5rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 1300px;
+}
+
+/* 2. 카드 및 컨테이너 스타일 (Glassmorphism & Dark Accent) */
+.fin-card {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.fin-card:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+/* 3. 메트릭 카드 그리드 (반응형 플렉스/그리드) */
+.metric-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+    margin-bottom: 0.75rem;
+}
+
+.metric-subtitle {
+    font-size: 0.8rem;
+    color: #94A3B8;
+    margin-top: 0.25rem;
+}
+
+/* metric-container 강제 1줄 목록형 */
+.metric-container.force-list-mode {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+}
+
+.metric-container.force-list-mode .metric-box {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 8px !important;
+    min-height: 52px;
+}
+
+.metric-container.force-list-mode .metric-left {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    margin-bottom: 0 !important;
+}
+
+.metric-container.force-list-mode .metric-left .metric-title {
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    color: #F8FAFC !important;
+    margin: 0 !important;
+}
+
+.metric-container.force-list-mode .metric-left .metric-subtitle {
+    font-size: 0.78rem !important;
+    color: #94A3B8 !important;
+    margin-top: 2px !important;
+}
+
+.metric-container.force-list-mode .metric-right {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    text-align: right !important;
+}
+
+.metric-container.force-list-mode .metric-value {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+}
+
+.metric-container.force-list-mode .metric-change {
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    margin-top: 2px !important;
+}
+
+/* metric-container 강제 카드형 (3개 핵심 자산 메트릭 3열 배치) */
+.metric-container.force-card-mode {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+}
+
+/* 손절 경고 알림 1줄 전용 바 (하단 독립 행) */
+.stop-loss-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.1rem;
+    border-radius: 8px;
+    background: #1E293B;
+    border: 1px solid #334155;
+    margin-bottom: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.stop-loss-bar.safe {
+    border-left: 4px solid #10B981;
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.stop-loss-bar.danger {
+    border-left: 4px solid #EF4444;
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* 8. 핵심 요약 및 추천가 분석 테이블 스타일 */
+.recom-table-container {
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(8px);
+}
+
+.recom-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.recom-table thead tr {
+    background: rgba(15, 23, 42, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recom-table th {
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #94A3B8;
+    letter-spacing: -0.01em;
+}
+
+.recom-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.15s ease;
+}
+
+.recom-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.recom-table tbody tr:hover {
+    background: rgba(51, 65, 85, 0.35);
+}
+
+.pc-only {
+    display: inline;
+}
+
+.mobile-only {
+    display: none;
+}
+
+.recom-table td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+}
+
+/* 가격 현황 컨테이너 및 텍스트 위계 */
+.price-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.price-curr-line {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.price-curr-label {
+    font-size: 0.78rem;
+    color: #94A3B8;
+    white-space: nowrap;
+}
+
+.price-curr-val {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #F8FAFC;
+    white-space: nowrap;
+}
+
+.price-sub-line {
+    font-size: 0.82rem;
+    color: #CBD5E1;
+    white-space: nowrap;
+}
+
+.price-sub-text {
+    white-space: nowrap;
+}
+
+.price-criteria-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+.price-criteria-line.empty {
+    margin-top: 0;
+}
+
+.criteria-divider {
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 0.7rem;
+    margin: 0 2px;
+    user-select: none;
+}
+
+.criteria-empty {
+    font-size: 0.75rem;
+    color: #64748B;
+    white-space: nowrap;
+}
+
+/* 손익 상태 배지 및 값 */
+.profit-badge {
+    display: inline-flex;
+    flex-direction: column;
+    white-space: nowrap;
+}
+
+.profit-rate-val {
+    font-weight: 700;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.profit-amount-val {
+    font-size: 0.82rem;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+.profit-won-val {
+    font-size: 0.78rem;
+    color: #94A3B8;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* 전략 추천 가이드 */
+.recom-guide-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.recom-buy-row, .recom-sell-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.recom-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.recom-badge.buy {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.recom-badge.sell {
+    background: rgba(239, 68, 68, 0.15);
+    color: #F87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.recom-price.buy {
+    color: #34D399;
+    font-weight: 700;
+    font-size: 0.92rem;
+    white-space: nowrap;
+}
+
+.recom-price.sell {
+    color: #F87171;
+    font-weight: 700;
+    font-size: 0.92rem;
+    white-space: nowrap;
+}
+
+.recom-desc {
+    color: #94A3B8;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.recom-krw {
+    color: #94A3B8;
+    font-size: 0.78rem;
+    font-weight: 400;
+    margin-left: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.price-curr-krw {
+    color: #94A3B8;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-left: 6px;
+    white-space: nowrap !important;
+    display: inline-block;
+}
+
+/* 시장 + 계좌 결합 1열 컴팩트 뱃지 */
+.market-account-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background: rgba(51, 65, 85, 0.85);
+    color: #E2E8F0;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.account-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    background: rgba(148, 163, 184, 0.15);
+    color: #CBD5E1;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.mini-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.mini-tag.target {
+    background: rgba(59, 130, 246, 0.18);
+    color: #93C5FD;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.mini-tag.stop {
+    background: rgba(239, 68, 68, 0.18);
+    color: #FCA5A5;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* 8-1. 종목별 AI 한줄평 코멘트 바 스타일 */
+.ai-comment-box {
+    margin-top: 6px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0.45rem 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ai-comment-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ai-badge.buy {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.ai-badge.hold {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FBBF24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.ai-badge.sell {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.ai-badge.danger {
+    background: rgba(239, 68, 68, 0.25);
+    color: #FCA5A5;
+    border: 1px solid #EF4444;
+}
+
+.ai-comment-text {
+    font-size: 0.8rem;
+    color: #CBD5E1;
+    line-height: 1.45;
+}
+
+.metric-subgrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.65rem;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.metric-box {
+    background: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.metric-box:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.metric-left {
+    margin-bottom: 0.35rem;
+}
+
+.metric-title {
+    font-size: 0.85rem;
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+.metric-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.metric-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #F8FAFC;
+    letter-spacing: -0.02em;
+}
+
+.metric-change {
+    margin-top: 0.25rem;
+}
+
+/* 3-1. 강제 1줄 목록형 스타일 (PC/모바일 수동 선택 모드) */
+.metric-subgrid.force-list-mode {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+}
+
+.metric-subgrid.force-list-mode .metric-box {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 8px !important;
+    min-height: 52px;
+}
+
+.metric-subgrid.force-list-mode .metric-left {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 0 !important;
+}
+
+.metric-subgrid.force-list-mode .metric-left .metric-title {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: #F8FAFC !important;
+}
+
+.metric-subgrid.force-list-mode .metric-right {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    text-align: right !important;
+}
+
+.metric-subgrid.force-list-mode .metric-value {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+}
+
+.metric-subgrid.force-list-mode .metric-change {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    margin-top: 2px !important;
+}
+
+/* 3-2. 강제 카드형 스타일 (모바일에서도 3열 유지) */
+.metric-subgrid.force-card-mode {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+}
+
+/* 4. 등락률 및 상태 배지 */
+.text-profit, .badge-profit {
+    color: #EF4444 !important; /* 한국 증시: 상승/수익 붉은색 */
+}
+
+.text-loss, .badge-loss {
+    color: #3B82F6 !important; /* 한국 증시: 하락/손실 파란색 */
+}
+
+.badge-tag {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background: rgba(51, 65, 85, 0.8);
+    color: #E2E8F0;
+    margin-right: 0.35rem;
+}
+
+/* 🚨 손절 경고 배지 */
+.badge-stop-loss {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.15);
+    color: #F87171;
+    border: 1px solid #EF4444;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    animation: pulse-danger 2s infinite ease-in-out;
+}
+
+@keyframes pulse-danger {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* 종목코드 원클릭 복사 배지 / 버튼 */
+.badge-copy-tag,
+.ticker-badge,
+button.badge-copy-tag,
+button.ticker-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 0.22rem 0.55rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #60A5FA !important;
+    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+    cursor: pointer !important;
+    user-select: all !important;
+    -webkit-user-select: all !important;
+    transition: all 0.15s ease-in-out !important;
+    white-space: nowrap !important;
+    -webkit-tap-highlight-color: transparent !important;
+    font-family: inherit !important;
+    line-height: 1.2 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    margin: 0 !important;
+}
+
+.badge-copy-tag:hover,
+.ticker-badge:hover,
+button.badge-copy-tag:hover,
+button.ticker-badge:hover {
+    background: rgba(59, 130, 246, 0.3) !important;
+    border-color: #60A5FA !important;
+    color: #93C5FD !important;
+    transform: translateY(-1px) !important;
+}
+
+.badge-copy-tag:active,
+.ticker-badge:active,
+button.badge-copy-tag:active,
+button.ticker-badge:active {
+    transform: scale(0.95) !important;
+    background: rgba(59, 130, 246, 0.45) !important;
+}
+
+/* Top 3 복사 버튼 네이티브 뱃지 스타일 */
+button[key*="btn_copy_top3"] {
+    border-radius: 8px !important;
+    font-size: 0.82rem !important;
+    padding: 0.25rem 0.6rem !important;
+    min-height: 34px !important;
+    font-weight: 600 !important;
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #60A5FA !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    transition: all 0.2s ease !important;
+}
+
+button[key*="btn_copy_top3"]:hover {
+    background: rgba(59, 130, 246, 0.3) !important;
+    border-color: #60A5FA !important;
+    color: #93C5FD !important;
+    transform: translateY(-1px) !important;
+}
+
+/* FinScope 커스텀 플로팅 토스트 알림 */
+.finscope-toast-container {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 9999999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.finscope-toast {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    border-radius: 10px;
+    padding: 0.75rem 1.15rem;
+    color: #F8FAFC;
+    font-size: 0.92rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+    word-break: keep-all;
+}
+
+.finscope-toast.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* 보유 종목 최신 뉴스 및 DART 주요 공시 피드 */
+.portfolio-news-item {
+    background: rgba(30, 41, 59, 0.55);
+    border-left: 3px solid #3B82F6;
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    transition: background 0.2s ease, border-left-color 0.2s ease;
+    word-break: keep-all;
+}
+
+.portfolio-news-item:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-left-color: #60A5FA;
+}
+
+.portfolio-news-main {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 0;
+    word-break: keep-all;
+}
+
+.portfolio-news-link {
+    color: #F8FAFC;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.93rem;
+    line-height: 1.45;
+    word-break: keep-all !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.portfolio-news-link:hover {
+    color: #60A5FA;
+    text-decoration: underline;
+}
+
+.portfolio-news-meta {
+    font-size: 0.8rem;
+    color: #94A3B8;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* 5. AI 진단 브리핑 컨테이너 (불필요한 외부 배경/왼쪽 테두리/패딩을 제거하여 개별 카드에 집중) */
+.briefing-box {
+    background: transparent !important;
+    border: none !important;
+    border-left: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-bottom: 0.5rem;
+}
+
+.briefing-item {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #E2E8F0;
+    margin-bottom: 0.5rem;
+}
+
+.briefing-item:last-child {
+    margin-bottom: 0;
+}
+
+/* 6. 시장 상태 및 현재 시간 상태 바 */
+.market-status-bar {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    word-break: keep-all;
+}
+
+.status-bar-times, .status-bar-markets {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(30, 41, 59, 0.9);
+    color: #F8FAFC;
+    word-break: keep-all;
+    white-space: nowrap;
+}
+
+.status-chip-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.status-chip-sub {
+    color: #94A3B8;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.time-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.82rem;
+    word-break: keep-all;
+    white-space: nowrap;
+}
+
+.time-label {
+    white-space: nowrap;
+}
+
+.time-val {
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+
+/* 7. 클릭 시 클립보드 복사 배지 스타일 */
+.badge-copy-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    background: rgba(59, 130, 246, 0.2);
+    color: #93C5FD;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.badge-copy-tag:hover {
+    background: rgba(59, 130, 246, 0.45);
+    color: #FFFFFF;
+    border-color: #60A5FA;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.35);
+}
+
+/* 5-8. 거래 계산기 시뮬레이션 결과 박스 */
+.simulation-box {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.simulation-title {
+    font-size: 0.85rem;
+    color: #94A3B8;
+    margin-bottom: 0.35rem;
+    white-space: nowrap;
+}
+
+.simulation-flow {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.simulation-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.sim-label {
+    color: #94A3B8;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.sim-val {
+    color: #F8FAFC;
+    white-space: nowrap;
+}
+
+.sim-val.highlight {
+    color: #38BDF8;
+    white-space: nowrap;
+}
+
+.sim-diff {
+    color: #38BDF8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.simulation-arrow {
+    font-size: 1rem;
+    color: #60A5FA;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.simulation-msg {
+    font-size: 0.8rem;
+    color: #CBD5E1;
+    margin-top: 0.4rem;
+}
+
+/* 6. 모바일 반응형 미디어 쿼리 */
+@media (max-width: 768px) {
+    .main .block-container,
+    .block-container,
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 3.8rem !important;
+        padding-bottom: 1.5rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    /* 모바일: 뉴스/공시 헤드라인 상하 구조 분리 */
+    .portfolio-news-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.35rem !important;
+        padding: 0.65rem 0.85rem !important;
+    }
+
+    .portfolio-news-main {
+        width: 100% !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 0.45rem !important;
+    }
+
+    .portfolio-news-link {
+        font-size: 0.88rem !important;
+        line-height: 1.4 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        word-break: keep-all !important;
+    }
+
+    .portfolio-news-meta {
+        font-size: 0.75rem !important;
+        color: #94A3B8 !important;
+        margin-left: 0 !important;
+        align-self: flex-start !important;
+    }
+
+    .badge-copy-tag,
+    .ticker-badge,
+    button.badge-copy-tag,
+    button.ticker-badge {
+        font-size: 0.74rem !important;
+        padding: 0.18rem 0.48rem !important;
+    }
+
+    .finscope-toast-container {
+        bottom: 24px;
+        right: 50%;
+        transform: translateX(50%);
+        width: calc(100% - 32px);
+        max-width: 360px;
+    }
+
+    .finscope-toast {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: center;
+        text-align: center;
+        font-size: 0.86rem;
+        padding: 0.7rem 0.9rem;
+    }
+    
+    /* 모바일 기본: metric-container도 1줄씩 길게 보여주는 가로형 리스트 바 UX */
+    .metric-container:not(.force-card-mode) {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+
+    .metric-container:not(.force-card-mode) .metric-box {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 8px !important;
+        min-height: 52px;
+    }
+
+    .metric-container:not(.force-card-mode) .metric-left {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        margin-bottom: 0 !important;
+    }
+
+    .metric-container:not(.force-card-mode) .metric-left .metric-title {
+        font-size: 0.92rem !important;
+        font-weight: 600 !important;
+        color: #F8FAFC !important;
+        margin: 0 !important;
+    }
+
+    .metric-container:not(.force-card-mode) .metric-left .metric-subtitle {
+        font-size: 0.78rem !important;
+        color: #94A3B8 !important;
+        margin-top: 2px !important;
+    }
+
+    .metric-container:not(.force-card-mode) .metric-right {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        text-align: right !important;
+    }
+
+    .metric-container:not(.force-card-mode) .metric-value {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+    }
+
+    .metric-container:not(.force-card-mode) .metric-change {
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
+        margin-top: 2px !important;
+    }
+
+    /* 모바일 기본: 1줄씩 길게 보여주는 가로형 리스트 바 UX */
+    .metric-subgrid:not(.force-card-mode) {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+
+    .metric-subgrid:not(.force-card-mode) .metric-box {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 8px !important;
+        min-height: 52px;
+    }
+
+    .metric-subgrid:not(.force-card-mode) .metric-left {
+        display: flex !important;
+        align-items: center !important;
+        margin-bottom: 0 !important;
+    }
+
+    .metric-subgrid:not(.force-card-mode) .metric-left .metric-title {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        color: #F8FAFC !important;
+    }
+
+    .metric-subgrid:not(.force-card-mode) .metric-right {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        text-align: right !important;
+    }
+
+    .metric-subgrid:not(.force-card-mode) .metric-value {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+    }
+
+    .metric-subgrid:not(.force-card-mode) .metric-change {
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
+        margin-top: 2px !important;
+    }
+
+    .fin-card {
+        padding: 0.9rem;
+        word-break: keep-all;
+    }
+
+    /* 모바일 헤딩 반응형 축소 및 단어 분리 방지 */
+    h1, .page-hero-title {
+        font-size: 1.3rem !important;
+        line-height: 1.35 !important;
+        word-break: keep-all !important;
+        letter-spacing: -0.5px !important;
+    }
+    h2, .page-sub-title {
+        font-size: 1.25rem !important;
+        line-height: 1.35 !important;
+        word-break: keep-all !important;
+        letter-spacing: -0.5px !important;
+    }
+    h3 {
+        font-size: 1.1rem !important;
+        line-height: 1.4 !important;
+        word-break: keep-all !important;
+        letter-spacing: -0.5px !important;
+    }
+    h4 {
+        font-size: 0.98rem !important;
+        line-height: 1.4 !important;
+        word-break: keep-all !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    /* 모바일 상단 시장 상태 바 최적화 */
+    .market-status-bar {
+        padding: 0.65rem 0.75rem;
+        gap: 0.45rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .status-bar-times, .status-bar-markets {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 0.35rem;
+    }
+
+    .time-chip {
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.76rem;
+        white-space: nowrap;
+    }
+
+    .status-chip {
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0.65rem;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+
+    .status-chip-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+    .status-chip-sub {
+        font-size: 0.74rem;
+        white-space: nowrap;
+        color: #94A3B8;
+    }
+
+    /* 모바일 터치 친화적 버튼 및 폼 */
+    .stButton > button {
+        min-height: 42px;
+        font-size: 0.95rem;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+    }
+
+    /* PC/모바일 반응형 토글 */
+    .pc-only {
+        display: none !important;
+    }
+    .mobile-only {
+        display: inline !important;
+    }
+
+    /* 모바일 반응형: 추천가 테이블을 모바일 카드 뷰로 변환 */
+    /* 모바일 반응형: 추천가 테이블을 모바일 세로 1열 카드 뷰로 완벽 변환 */
+    .recom-table-container {
+        border: none !important;
+        background: transparent !important;
+        overflow: visible !important;
+        padding: 0 !important;
+    }
+
+    .recom-table, .recom-table tbody {
+        display: block !important;
+        width: 100% !important;
+        border: none !important;
+    }
+
+    .recom-table thead {
+        display: none !important;
+    }
+
+    /* 카드 컨테이너: CSS Grid 2열/3행 독립 카드 구조 */
+    .recom-table tbody tr {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        grid-template-areas:
+            "stock profit"
+            "price price"
+            "guide guide" !important;
+        row-gap: 8px !important;
+        background: rgba(30, 41, 59, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        padding: 0.9rem 1rem !important;
+        margin-bottom: 0.85rem !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .recom-table td {
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    /* 1행 좌측: 종목 뱃지 + 종목명 */
+    .recom-table td.td-stock {
+        grid-area: stock;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+    }
+
+    /* 1행 우측: 실시간 수익률 배지 */
+    .recom-table td.td-profit {
+        grid-area: profit;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        text-align: right;
+    }
+
+    .recom-table td.td-profit .profit-badge {
+        align-items: flex-end;
+        background: rgba(15, 23, 42, 0.65);
+        padding: 4px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        white-space: nowrap;
+    }
+
+    .recom-table td.td-profit .profit-rate-val {
+        font-size: 0.95rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .recom-table td.td-profit .profit-amount-val {
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+
+    /* 2행: 시세 요약 (현재가, 평단, 목표/손절) */
+    .recom-table td.td-price {
+        grid-area: price;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 7px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .recom-table td.td-price .price-curr-val {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #F8FAFC;
+        white-space: nowrap;
+    }
+
+    .recom-table td.td-price .price-sub-line {
+        font-size: 0.82rem;
+        color: #94A3B8;
+        white-space: nowrap;
+    }
+
+    .recom-table td.td-price .price-criteria-line {
+        font-size: 0.75rem;
+        margin-top: 2px;
+        white-space: nowrap;
+    }
+
+    .recom-table td.td-price .mini-tag {
+        font-size: 0.72rem;
+        padding: 1px 5px;
+    }
+
+    /* 3 & 4행: 전략 추천 가이드 & AI 한줄평 */
+    .recom-table td.td-guide {
+        grid-area: guide;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .recom-guide-box {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.55rem 0.75rem;
+        margin-top: 2px;
+    }
+
+    .recom-buy-row, .recom-sell-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.8rem;
+        overflow: hidden;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+
+    .recom-badge {
+        flex-shrink: 0;
+    }
+
+    .recom-price.buy, .recom-price.sell {
+        font-size: 0.88rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .recom-krw {
+        font-size: 0.75rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .recom-desc {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.74rem;
+    }
+
+    .ai-comment-box {
+        margin-top: 4px;
+        padding: 0.55rem 0.75rem;
+    }
+}
+
+/* ==========================================================================
+   9. 포트폴리오 탭 전환 스타일 및 포커스 테두리(띠) 완전 제거
+   ========================================================================== */
+/* 탭 포커스 시 PC/모바일에서 생기는 거슬리는 사각형 테두리/띠(outline/border) 완전 제거 */
+[data-testid="stTabs"] button,
+[data-testid="stTabs"] [role="tab"],
+[data-testid="stTabs"] [data-baseweb="tab"] {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+[data-testid="stTabs"] button:focus,
+[data-testid="stTabs"] button:focus-visible,
+[data-testid="stTabs"] [role="tab"]:focus,
+[data-testid="stTabs"] [role="tab"]:focus-visible,
+[data-testid="stTabs"] [data-baseweb="tab"]:focus,
+[data-testid="stTabs"] [data-baseweb="tab"]:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* 탭 전환 시 시각적 부드러운 전환 */
+body.tab-switching [data-testid="stTabs"] [role="tablist"] button[role="tab"],
+body.tab-switching [data-testid="stTabs"] [data-baseweb="tab"] {
+    transition: opacity 0.15s ease !important;
+}
+
+.fin-tab-loading-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 9999999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.94);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    border-radius: 50px;
+    padding: 0.75rem 1.4rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fin-tab-loading-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.fin-tab-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid rgba(59, 130, 246, 0.25);
+    border-top-color: #60A5FA;
+    border-radius: 50%;
+    animation: fin-tab-spin 0.75s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes fin-tab-spin {
+    to { transform: rotate(360deg); }
+}
+
+.fin-tab-msg {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fin-tab-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #F8FAFC;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.fin-tab-sub {
+    font-size: 0.75rem;
+    color: #94A3B8;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .fin-tab-loading-toast {
+        bottom: 24px;
+        padding: 0.6rem 1.1rem;
+        gap: 10px;
+        max-width: 90vw;
+    }
+    .fin-tab-title {
+        font-size: 0.82rem;
+    }
+    .fin-tab-sub {
+        font-size: 0.72rem;
+    }
+}
+
+/* ==========================================================================
+   금액 입력 필드(Number Input) 천 단위 콤마 디스플레이 & 가독성 최적화
+   ========================================================================== */
+.finscope-number-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    pointer-events: auto;
+    cursor: text;
+    background: transparent;
+    z-index: 2;
+    box-sizing: border-box;
+    user-select: none;
+    letter-spacing: -0.2px;
+    transition: opacity 0.15s ease;
+}
+
+[data-testid="stNumberInput"] [data-baseweb="base-input"] {
+    position: relative !important;
+}
+
+[data-testid="stNumberInput"] input[data-testid="stNumberInput-Input"]:focus {
+    color: #F8FAFC !important;
+}
+
+/* ==========================================================================
+   일일 포트폴리오 AI 진단 브리핑 (모바일 가독성 최적화)
+   ========================================================================== */
+.briefing-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: transparent !important;
+    border: none !important;
+    border-left: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-top: 0.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.briefing-card {
+    background: rgba(30, 41, 59, 0.78);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(8px);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.briefing-card:hover {
+    border-color: rgba(148, 163, 184, 0.32);
+}
+
+.briefing-card.card-blue {
+    border-left: 5px solid #3B82F6;
+}
+
+.briefing-card.card-green {
+    border-left: 5px solid #10B981;
+}
+
+.briefing-card.card-warning {
+    border-left: 5px solid #F59E0B;
+}
+
+.briefing-card.card-danger {
+    border-left: 5px solid #EF4444;
+}
+
+.briefing-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.briefing-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.briefing-desc {
+    color: #F1F5F9;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin: 0 0 10px 0;
+    word-break: keep-all;
+    letter-spacing: -0.2px;
+}
+
+.briefing-meta-strip {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #94A3B8;
+    line-height: 1.5;
+    word-break: keep-all;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+}
+
+.briefing-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap !important;
+}
+
+.briefing-action-box {
+    margin-top: 0.5rem;
+    margin-bottom: 0.3rem;
+}
+
+.briefing-action-title {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #CBD5E1;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.briefing-action-item {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(99, 102, 241, 0.22);
+    border-left: 3px solid #6366F1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.86rem;
+    color: #E2E8F0;
+    line-height: 1.5;
+    margin-bottom: 5px;
+    word-break: keep-all;
+}
+
+.briefing-pref-container {
+    margin-top: 4px !important;
+    margin-bottom: 0px !important;
+    padding-top: 0px !important;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.briefing-pref-container [data-testid="stCheckbox"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.briefing-pref-container [data-testid="stCheckbox"] label {
+    font-size: 0.8rem !important;
+    color: #94A3B8 !important;
+    line-height: 1.2 !important;
+    user-select: none;
+}
+
+/* ➕ 계좌 관리 컴팩트 버튼 및 계좌 안내 텍스트 반응형 스타일 */
+.account-caption-text {
+    display: inline-block;
+}
+
+/* 1. 상단 사용자 헤더 & 로그아웃 버튼 (PC & 모바일 1줄 인라인 정렬) */
+.st-key-portfolio_user_header_container [data-testid="stHorizontalBlock"],
+.st-key-portfolio_user_header_container .stHorizontalBlock,
+div[data-testid="stHorizontalBlock"]:has(.st-key-top_logout_btn),
+div.stHorizontalBlock:has(.st-key-top_logout_btn) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 0.2rem !important;
+}
+
+.st-key-portfolio_user_header_container div[data-testid="stColumn"]:first-child,
+.st-key-portfolio_user_header_container div[data-testid="column"]:first-child,
+.st-key-portfolio_user_header_container div.stColumn:first-child,
+div[data-testid="stHorizontalBlock"]:has(.st-key-top_logout_btn) > div:first-child,
+div.stHorizontalBlock:has(.st-key-top_logout_btn) > div:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: calc(100% - 76px) !important;
+    max-width: calc(100% - 76px) !important;
+    box-sizing: border-box !important;
+}
+
+.st-key-portfolio_user_header_container div[data-testid="stColumn"]:last-child,
+.st-key-portfolio_user_header_container div[data-testid="column"]:last-child,
+.st-key-portfolio_user_header_container div.stColumn:last-child,
+div[data-testid="stHorizontalBlock"]:has(.st-key-top_logout_btn) > div:last-child,
+div.stHorizontalBlock:has(.st-key-top_logout_btn) > div:last-child {
+    flex: 0 0 68px !important;
+    min-width: 68px !important;
+    max-width: 68px !important;
+    width: 68px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    box-sizing: border-box !important;
+}
+
+.st-key-top_logout_btn,
+.st-key-top_logout_btn button {
+    min-width: 64px !important;
+    width: 68px !important;
+    max-width: 68px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 6px !important;
+    font-size: 0.78rem !important;
+    line-height: 30px !important;
+    white-space: nowrap !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. 계좌 드롭다운 & ➕ 버튼 (PC & 모바일 1줄 인라인 일체형 정렬) */
+.st-key-account_filter_container [data-testid="stHorizontalBlock"],
+.st-key-account_filter_container .stHorizontalBlock,
+.st-key-edit_account_field_container [data-testid="stHorizontalBlock"],
+.st-key-edit_account_field_container .stHorizontalBlock,
+.st-key-reg_account_field_container [data-testid="stHorizontalBlock"],
+.st-key-reg_account_field_container .stHorizontalBlock {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.st-key-account_filter_container [data-testid="stHorizontalBlock"] > div:first-child,
+.st-key-account_filter_container .stHorizontalBlock > div:first-child,
+.st-key-edit_account_field_container [data-testid="stHorizontalBlock"] > div:first-child,
+.st-key-edit_account_field_container .stHorizontalBlock > div:first-child,
+.st-key-reg_account_field_container [data-testid="stHorizontalBlock"] > div:first-child,
+.st-key-reg_account_field_container .stHorizontalBlock > div:first-child {
+    flex: 1 1 calc(100% - 48px) !important;
+    width: calc(100% - 48px) !important;
+    min-width: 0 !important;
+    max-width: calc(100% - 48px) !important;
+    box-sizing: border-box !important;
+}
+
+.st-key-account_filter_container [data-testid="stHorizontalBlock"] > div:last-child,
+.st-key-account_filter_container .stHorizontalBlock > div:last-child,
+.st-key-edit_account_field_container [data-testid="stHorizontalBlock"] > div:last-child,
+.st-key-edit_account_field_container .stHorizontalBlock > div:last-child,
+.st-key-reg_account_field_container [data-testid="stHorizontalBlock"] > div:last-child,
+.st-key-reg_account_field_container .stHorizontalBlock > div:last-child {
+    flex: 0 0 42px !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+.st-key-account_filter_container [data-testid="stSelectbox"],
+.st-key-edit_account_field_container [data-testid="stSelectbox"],
+.st-key-reg_account_field_container [data-testid="stSelectbox"] {
+    margin-bottom: 0 !important;
+    width: 100% !important;
+}
+
+.st-key-account_filter_container [data-testid="stSelectbox"] [data-baseweb="select"],
+.st-key-edit_account_field_container [data-testid="stSelectbox"] [data-baseweb="select"],
+.st-key-reg_account_field_container [data-testid="stSelectbox"] [data-baseweb="select"] {
+    min-height: 42px !important;
+    height: 42px !important;
+    box-sizing: border-box !important;
+}
+
+.st-key-account_filter_container [data-testid="stButton"],
+.st-key-edit_account_field_container [data-testid="stButton"],
+.st-key-reg_account_field_container [data-testid="stButton"],
+.st-key-top_manage_acc_btn,
+.st-key-reg_btn_manage_acc,
+div[class*="st-key-m_acc_btn_manage_"] {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    box-sizing: border-box !important;
+}
+
+button[data-testid*="top_manage_acc_btn"],
+button[data-testid*="m_acc_btn_manage_"],
+button[data-testid*="reg_btn_manage_acc"],
+button[key="top_manage_acc_btn"],
+button[key="reg_btn_manage_acc"],
+button[key*="m_acc_btn_manage_"],
+[data-testid="stButton"] button[aria-label="➕"],
+.st-key-top_manage_acc_btn button,
+.st-key-reg_btn_manage_acc button,
+div[class*="st-key-m_acc_btn_manage_"] button {
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    border-radius: 8px !important;
+    background: rgba(30, 41, 59, 0.9) !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    box-sizing: border-box !important;
+    transition: all 0.15s ease !important;
+}
+
+button[data-testid*="top_manage_acc_btn"]:hover,
+button[data-testid*="m_acc_btn_manage_"]:hover,
+button[data-testid*="reg_btn_manage_acc"]:hover,
+button[key="top_manage_acc_btn"]:hover,
+button[key="reg_btn_manage_acc"]:hover,
+button[key*="m_acc_btn_manage_"]:hover,
+[data-testid="stButton"] button[aria-label="➕"]:hover,
+.st-key-top_manage_acc_btn button:hover,
+.st-key-reg_btn_manage_acc button:hover,
+div[class*="st-key-m_acc_btn_manage_"] button:hover {
+    background: #3B82F6 !important;
+    border-color: #60A5FA !important;
+    color: #FFFFFF !important;
+}
+
+/* 3. 계좌 필터 인라인 라벨 & 툴팁 디자인 */
+.account-filter-label-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0.35rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #F1F5F9;
+    user-select: none;
+}
+
+.account-filter-label-text {
+    display: inline-block;
+    color: #F1F5F9;
+    letter-spacing: -0.3px;
+}
+
+.account-inline-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.account-inline-tooltip .tooltip-icon {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    display: inline-block;
+    line-height: 1;
+}
+
+.account-inline-tooltip:hover .tooltip-icon,
+.account-inline-tooltip:focus .tooltip-icon,
+.account-inline-tooltip:active .tooltip-icon {
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.account-inline-tooltip .tooltip-bubble {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: #0F172A;
+    color: #E2E8F0;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.45;
+    white-space: normal;
+    word-break: keep-all;
+    width: max-content;
+    max-width: 280px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease;
+    transform: translateY(-4px);
+}
+
+.account-inline-tooltip:hover .tooltip-bubble,
+.account-inline-tooltip:focus .tooltip-bubble,
+.account-inline-tooltip:active .tooltip-bubble {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+/* 글로벌 툴팁(BaseWeb 포함) 모바일 오버플로우 방지 */
+div[data-baseweb="popover"],
+div[data-baseweb="tooltip"],
+div[role="tooltip"] {
+    max-width: calc(100vw - 24px) !important;
+    box-sizing: border-box !important;
+    word-break: keep-all !important;
+}
+
+div[data-baseweb="tooltip"] > div,
+div[role="tooltip"] > div {
+    max-width: 100% !important;
+    word-break: keep-all !important;
+    line-height: 1.45 !important;
+    font-size: 0.8rem !important;
+}
+
+/* 4. AI 진단 Expander 및 상단 브리핑 헤더 스타일 */
+[data-testid="stExpander"] {
+    margin-bottom: 0.25rem !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+[data-testid="stExpander"] summary {
+    padding-top: 0.52rem !important;
+    padding-bottom: 0.52rem !important;
+    white-space: nowrap !important;
+}
+
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary div {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    padding: 0.45rem 0.5rem 0.65rem 0.5rem !important;
+}
+
+/* AI 진단 내부: [종합 리스크 뱃지 + 새로고침 버튼] 1줄 수평 정렬 */
+.st-key-briefing_status_header_container [data-testid="stHorizontalBlock"],
+.st-key-briefing_status_header_container .stHorizontalBlock,
+div[data-testid="stHorizontalBlock"]:has(.st-key-refresh_daily_briefing_btn),
+div.stHorizontalBlock:has(.st-key-refresh_daily_briefing_btn) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.st-key-briefing_status_header_container div[data-testid="stColumn"]:first-child,
+.st-key-briefing_status_header_container div[data-testid="column"]:first-child,
+.st-key-briefing_status_header_container div.stColumn:first-child,
+div[data-testid="stHorizontalBlock"]:has(.st-key-refresh_daily_briefing_btn) > div:first-child,
+div.stHorizontalBlock:has(.st-key-refresh_daily_briefing_btn) > div:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.st-key-briefing_status_header_container div[data-testid="stColumn"]:last-child,
+.st-key-briefing_status_header_container div[data-testid="column"]:last-child,
+.st-key-briefing_status_header_container div.stColumn:last-child,
+div[data-testid="stHorizontalBlock"]:has(.st-key-refresh_daily_briefing_btn) > div:last-child,
+div.stHorizontalBlock:has(.st-key-refresh_daily_briefing_btn) > div:last-child {
+    flex: 0 0 auto !important;
+    min-width: 82px !important;
+    width: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+}
+
+.st-key-refresh_daily_briefing_btn,
+.st-key-refresh_daily_briefing_btn button {
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 0.78rem !important;
+    line-height: 30px !important;
+    white-space: nowrap !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+}
+
+/* 5. 전역 스크립트 인젝터 컨테이너 및 0px 고스트 요소 여백 완전 제거 */
+.st-key-global_script_injector_container,
+div[data-testid="stVerticalBlock"]:has(> .st-key-global_script_injector_container),
+.st-key-global_script_injector_container [data-testid="stElementContainer"],
+div[data-testid="stElementContainer"][height="0px"],
+div[data-testid="stElementContainer"][width="0px"],
+div.element-container[height="0px"],
+div.element-container[width="0px"],
+div[data-testid="stElementContainer"]:has(div[style*="display:none"]),
+div[data-testid="stElementContainer"]:has(div[style*="display: none"]),
+div[data-testid="stElementContainer"]:has(iframe[height="0"]),
+iframe[height="0"],
+iframe[width="0"] {
+    display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: absolute !important;
+    pointer-events: none !important;
+}
+
+[data-testid="stTabs"] {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+[data-testid="stTabs"] [data-baseweb="tab-list"] {
+    margin-top: 0 !important;
+    margin-bottom: 0.35rem !important;
+    padding-top: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .account-caption-text,
+    .pc-only {
+        display: none !important;
+    }
+
+    .portfolio-header-title {
+        font-size: 1.15rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .portfolio-header-sub {
+        font-size: 0.72rem !important;
+    }
+
+    .portfolio-header-box {
+        margin-bottom: 0 !important;
+    }
+
+    /* 모바일 헤더 1줄 유지 강제 (Streamlit 컬럼 세로 분리 방지) */
+    .st-key-portfolio_user_header_container [data-testid="stHorizontalBlock"],
+    .st-key-portfolio_user_header_container .stHorizontalBlock,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-top_logout_btn),
+    div.stHorizontalBlock:has(.st-key-top_logout_btn) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+        width: 100% !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .st-key-portfolio_user_header_container div[data-testid="stColumn"]:first-child,
+    .st-key-portfolio_user_header_container div[data-testid="column"]:first-child,
+    .st-key-portfolio_user_header_container div.stColumn:first-child,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-top_logout_btn) > div:first-child,
+    div.stHorizontalBlock:has(.st-key-top_logout_btn) > div:first-child {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: calc(100% - 72px) !important;
+        max-width: calc(100% - 72px) !important;
+    }
+
+    .st-key-portfolio_user_header_container div[data-testid="stColumn"]:last-child,
+    .st-key-portfolio_user_header_container div[data-testid="column"]:last-child,
+    .st-key-portfolio_user_header_container div.stColumn:last-child,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-top_logout_btn) > div:last-child,
+    div.stHorizontalBlock:has(.st-key-top_logout_btn) > div:last-child {
+        flex: 0 0 66px !important;
+        min-width: 66px !important;
+        max-width: 66px !important;
+        width: 66px !important;
+    }
+
+    /* 모바일 계좌 선택 및 + 버튼 1줄 유지 강제 (컨테이너 내부만 정밀 타겟) */
+    .st-key-account_filter_container [data-testid="stHorizontalBlock"],
+    .st-key-edit_account_field_container [data-testid="stHorizontalBlock"],
+    .st-key-reg_account_field_container [data-testid="stHorizontalBlock"],
+    .st-key-account_filter_container .stHorizontalBlock,
+    .st-key-edit_account_field_container .stHorizontalBlock,
+    .st-key-reg_account_field_container .stHorizontalBlock {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: flex-end !important;
+        gap: 6px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .st-key-account_filter_container [data-testid="stHorizontalBlock"] > div:first-child,
+    .st-key-edit_account_field_container [data-testid="stHorizontalBlock"] > div:first-child,
+    .st-key-reg_account_field_container [data-testid="stHorizontalBlock"] > div:first-child,
+    .st-key-account_filter_container .stHorizontalBlock > div:first-child,
+    .st-key-edit_account_field_container .stHorizontalBlock > div:first-child,
+    .st-key-reg_account_field_container .stHorizontalBlock > div:first-child {
+        flex: 1 1 calc(100% - 48px) !important;
+        width: calc(100% - 48px) !important;
+        min-width: 0 !important;
+        max-width: calc(100% - 48px) !important;
+        box-sizing: border-box !important;
+    }
+
+    .st-key-account_filter_container [data-testid="stHorizontalBlock"] > div:last-child,
+    .st-key-edit_account_field_container [data-testid="stHorizontalBlock"] > div:last-child,
+    .st-key-reg_account_field_container [data-testid="stHorizontalBlock"] > div:last-child,
+    .st-key-account_filter_container .stHorizontalBlock > div:last-child,
+    .st-key-edit_account_field_container .stHorizontalBlock > div:last-child,
+    .st-key-reg_account_field_container .stHorizontalBlock > div:last-child {
+        flex: 0 0 42px !important;
+        width: 42px !important;
+        min-width: 42px !important;
+        max-width: 42px !important;
+        display: flex !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+    }
+
+    .st-key-top_manage_acc_btn,
+    .st-key-reg_btn_manage_acc,
+    div[class*="st-key-m_acc_btn_manage_"] {
+        width: 42px !important;
+        min-width: 42px !important;
+        max-width: 42px !important;
+    }
+
+    .st-key-top_manage_acc_btn button,
+    .st-key-reg_btn_manage_acc button,
+    div[class*="st-key-m_acc_btn_manage_"] button {
+        width: 42px !important;
+        min-width: 42px !important;
+        max-width: 42px !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+    }
+
+    .main .block-container,
+    .block-container,
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 3.8rem !important;
+        padding-bottom: 1.5rem !important;
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
+    }
+
+    .briefing-box {
+        gap: 8px !important;
+        background: transparent !important;
+        border: none !important;
+        border-left: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin-top: 0.1rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .briefing-card {
+        padding: 10px 12px;
+        border-radius: 8px;
+    }
+
+    .briefing-header-row {
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .briefing-title {
+        font-size: 0.9rem;
+    }
+
+    .briefing-desc {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .briefing-meta-strip {
+        font-size: 0.78rem;
+        padding: 6px 9px;
+        gap: 4px 8px;
+    }
+
+    .briefing-action-box {
+        margin-top: 0.4rem;
+        margin-bottom: 0.2rem;
+    }
+
+    .briefing-action-title {
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+    }
+
+    .briefing-action-item {
+        font-size: 0.82rem !important;
+        padding: 0.55rem 0.75rem !important;
+        line-height: 1.45 !important;
+        margin-bottom: 4px !important;
+    }
+
+    .briefing-pref-container {
+        justify-content: flex-start !important;
+        margin-top: 2px !important;
+    }
+
+    .briefing-pref-container [data-testid="stCheckbox"] label {
+        font-size: 0.76rem !important;
+    }
+
+    /* 모바일 툴팁 위치 및 말풍선 짤림 방지 */
+    .account-filter-label-row {
+        margin-bottom: 0.25rem !important;
+        font-size: 0.84rem !important;
+    }
+
+    .account-inline-tooltip .tooltip-bubble {
+        left: 0 !important;
+        right: auto !important;
+        max-width: min(280px, calc(100vw - 32px)) !important;
+        width: max-content !important;
+        box-sizing: border-box !important;
+        word-break: keep-all !important;
+    }
+
+    /* AI 진단 Expander 모바일 1줄 완벽 정리 */
+    [data-testid="stExpander"] {
+        margin-bottom: 0.25rem !important;
+    }
+
+    [data-testid="stExpander"] summary {
+        padding-top: 0.42rem !important;
+        padding-bottom: 0.42rem !important;
+        padding-left: 0.65rem !important;
+        padding-right: 0.65rem !important;
+        white-space: nowrap !important;
+    }
+
+    [data-testid="stExpander"] summary p,
+    [data-testid="stExpander"] summary span,
+    [data-testid="stExpander"] summary div {
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        letter-spacing: -0.4px !important;
+    }
+
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+        padding: 0.35rem 0.35rem 0.55rem 0.35rem !important;
+    }
+
+    /* 모바일 진단 내부 리스크 + 새로고침 1줄 보정 */
+    .st-key-briefing_status_header_container [data-testid="stHorizontalBlock"],
+    .st-key-briefing_status_header_container .stHorizontalBlock,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-refresh_daily_briefing_btn),
+    div.stHorizontalBlock:has(.st-key-refresh_daily_briefing_btn) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+        width: 100% !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .st-key-briefing_status_header_container div[data-testid="stColumn"]:first-child,
+    .st-key-briefing_status_header_container div[data-testid="column"]:first-child,
+    .st-key-briefing_status_header_container div.stColumn:first-child,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-refresh_daily_briefing_btn) > div:first-child,
+    div.stHorizontalBlock:has(.st-key-refresh_daily_briefing_btn) > div:first-child {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: auto !important;
+    }
+
+    .st-key-briefing_status_header_container div[data-testid="stColumn"]:last-child,
+    .st-key-briefing_status_header_container div[data-testid="column"]:last-child,
+    .st-key-briefing_status_header_container div.stColumn:last-child,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-refresh_daily_briefing_btn) > div:last-child,
+    div.stHorizontalBlock:has(.st-key-refresh_daily_briefing_btn) > div:last-child {
+        flex: 0 0 auto !important;
+        min-width: 78px !important;
+        width: auto !important;
+    }
+
+    .st-key-refresh_daily_briefing_btn button {
+        height: 30px !important;
+        min-height: 30px !important;
+        max-height: 30px !important;
+        padding: 0 8px !important;
+        font-size: 0.76rem !important;
+        line-height: 28px !important;
+    }
+
+    [data-testid="stTabs"] [data-baseweb="tab-list"] {
+        margin-bottom: 0.3rem !important;
+    }
+}
+
