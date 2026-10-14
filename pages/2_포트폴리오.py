@@ -64,6 +64,8 @@ if "scroll_to_top" not in st.session_state:
     st.session_state.scroll_to_top = False
 if "add_expander_expanded" not in st.session_state:
     st.session_state.add_expander_expanded = None
+if "pending_reg_stock" not in st.session_state:
+    st.session_state.pending_reg_stock = None
 
 
 # ------------------------------------------------------------------------------
@@ -1070,6 +1072,93 @@ def inject_currency_input_script():
         pass
 
 
+def inject_mobile_landscape_table_script():
+    """
+    초슬림 퀵 에디터 가로 전체화면 모드(Landscape View) 스크립트:
+    1. '가로 넓게 보기' 버튼 클릭 즉시:
+       - User Gesture 내에서 document.documentElement.requestFullscreen() 및 screen.orientation.lock('landscape') 시도
+    2. '닫기' 버튼 또는 다이얼로그 닫기 클릭 시:
+       - document.exitFullscreen() 및 screen.orientation.unlock() 복귀
+    """
+    js_raw = """
+(function() {
+    try {
+        var doc = (typeof window !== 'undefined' && window.parent && window.parent.document) || (typeof document !== 'undefined' ? document : null);
+        var win = (typeof window !== 'undefined' && window.parent) || window;
+        if (!doc) return;
+
+        function exitLandscape() {
+            try {
+                if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+                    if (doc.exitFullscreen) {
+                        doc.exitFullscreen().catch(function(){});
+                    } else if (doc.webkitExitFullscreen) {
+                        doc.webkitExitFullscreen().catch(function(){});
+                    }
+                }
+                if (win.screen && win.screen.orientation && win.screen.orientation.unlock) {
+                    win.screen.orientation.unlock();
+                }
+            } catch(e) {}
+        }
+
+        function attachLandscapeHandlers() {
+            try {
+                var buttons = doc.querySelectorAll('button');
+                buttons.forEach(function(btn) {
+                    var txt = (btn.innerText || btn.textContent || '').trim();
+                    var aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+
+                    if (txt.indexOf('가로 넓게 보기') !== -1 && !btn._landscapeEnterAttached) {
+                        btn._landscapeEnterAttached = true;
+                        btn.addEventListener('click', function() {
+                            try {
+                                if (doc.documentElement.requestFullscreen) {
+                                    doc.documentElement.requestFullscreen().catch(function(){});
+                                } else if (doc.documentElement.webkitRequestFullscreen) {
+                                    doc.documentElement.webkitRequestFullscreen().catch(function(){});
+                                }
+                                if (win.screen && win.screen.orientation && win.screen.orientation.lock) {
+                                    win.screen.orientation.lock('landscape').catch(function(){});
+                                }
+                            } catch(e) {}
+                        });
+                    }
+
+                    if ((txt.indexOf('닫기') !== -1 || aria === 'close' || aria.indexOf('닫기') !== -1) && !btn._landscapeExitAttached) {
+                        btn._landscapeExitAttached = true;
+                        btn.addEventListener('click', function() {
+                            exitLandscape();
+                        });
+                    }
+                });
+            } catch(e) {}
+        }
+
+        if (!doc._finscopeLandscapeObs) {
+            doc._finscopeLandscapeObs = new MutationObserver(attachLandscapeHandlers);
+            if (doc.body) {
+                doc._finscopeLandscapeObs.observe(doc.body, { childList: true, subtree: true });
+            }
+            doc.addEventListener('fullscreenchange', function() {
+                if (!doc.fullscreenElement) {
+                    exitLandscape();
+                }
+            });
+        }
+        attachLandscapeHandlers();
+    } catch(err) {}
+})();
+"""
+    js_code = f"<script>{js_raw}</script>"
+    st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
+    try:
+        import streamlit.components.v1 as components
+        components.html(js_code, height=0, width=0)
+    except Exception:
+        pass
+
+
 def _format_currency_cb(widget_key: str, market: str):
     raw_text = st.session_state.get(widget_key, "")
     cleaned = re.sub(r"[^\d.]", "", str(raw_text).strip())
@@ -1479,15 +1568,22 @@ def has_unsaved_registration_inputs(new_ticker: str = "") -> bool:
     return False
 
 
-def apply_new_stock_and_reset_form(found: dict, market: str, reset_msg: bool = True):
-    """새 종목 정보를 반영하고 이전 미저장 입력 항목(수량, 목표가, 손절가, 메모 등)을 깨끗하게 초기화"""
+def _do_apply_new_stock_and_reset_form(found: dict, market: str, reset_msg: bool = True):
+    """새 종목 정보를 반영하고 이전 미저장 입력 항목(수량, 목표가, 손절가, 메모 등)을 깨끗하게 초기화하며 현재가를 매수가에 자동 세팅"""
     st.session_state.reg_ticker = found.get("ticker", "")
     st.session_state.reg_name = found.get("name", "")
 
-    cp = float(found.get("current_price") or 0.0)
+    actual_market = found.get("market") or market
+    if actual_market in ["KRX", "US"]:
+        try:
+            st.session_state["reg_market_select"] = actual_market
+        except Exception:
+            pass
+
+    cp = float(found.get("current_price") or found.get("price") or 0.0)
     st.session_state.reg_buy_price = cp
     if cp > 0:
-        st.session_state["reg_in_buy_price"] = f"{int(cp):,}원" if market == "KRX" else f"${cp:,.2f}"
+        st.session_state["reg_in_buy_price"] = f"{int(cp):,}원" if actual_market == "KRX" else f"${cp:,.2f}"
     else:
         st.session_state["reg_in_buy_price"] = ""
 
@@ -1500,17 +1596,37 @@ def apply_new_stock_and_reset_form(found: dict, market: str, reset_msg: bool = T
     st.session_state["reg_custom_account"] = ""
 
     if found.get("ticker"):
+        price_disp = f"{int(cp):,}원" if actual_market == "KRX" else f"${cp:,.2f}" if cp > 0 else ""
+        price_tag = f" (현재가 {price_disp} 매수가 자동 세팅)" if price_disp else ""
         if reset_msg:
             st.session_state.reg_lookup_msg = (
                 "success",
-                f"✅ '{found['name']} ({found['ticker']})' 정보를 성공적으로 불러왔습니다. (이전 입력 정보 초기화 완료)"
+                f"✅ '{found['name']} ({found['ticker']})' 정보를 성공적으로 불러왔습니다.{price_tag} (이전 입력 정보 초기화 완료)"
             )
         else:
             st.session_state.reg_lookup_msg = (
                 "success",
-                f"✅ '{found['name']} ({found['ticker']})' 정보를 성공적으로 불러왔습니다."
+                f"✅ '{found['name']} ({found['ticker']})' 정보를 성공적으로 불러왔습니다.{price_tag}"
             )
     st.session_state.add_expander_expanded = True
+
+
+def apply_new_stock_and_reset_form(found: dict, market: str, reset_msg: bool = True):
+    """
+    새 종목 정보 반영 및 폼 초기화 (지연 주입을 통해 StreamlitWidgetAlreadyInstantiatedError 완벽 방지)
+    """
+    actual_market = found.get("market") or market
+    st.session_state.pending_reg_stock = {
+        "found": found,
+        "market": actual_market,
+        "reset_msg": reset_msg,
+    }
+    # 위젯 렌더링 전인 안전한 컨텍스트(테스트 환경 등)에서는 즉시 반영도 시도
+    try:
+        _do_apply_new_stock_and_reset_form(found, actual_market, reset_msg)
+    except Exception:
+        # 이미 위젯이 인스턴스화된 경우(버튼 클릭 처리부 등)에는 rerun 시 위젯 생성 전 최상단에서 안전하게 적용됨
+        pass
 
 
 @st.dialog("⚠️ 기존 입력 정보 초기화 확인", width="small")
@@ -1534,15 +1650,23 @@ def confirm_stock_reload_dialog(found_stock: dict, market: str):
     c1, c2 = st.columns(2)
     with c1:
         if st.button("🔄 초기화하고 불러오기", type="primary", use_container_width=True, key="dlg_btn_confirm_reload"):
-            apply_new_stock_and_reset_form(found_stock, market, reset_msg=True)
+            actual_m = found_stock.get("market") or market
+            apply_new_stock_and_reset_form(found_stock, actual_m, reset_msg=True)
             st.rerun()
     with c2:
         if st.button("❌ 취소 (기존 입력 유지)", type="secondary", use_container_width=True, key="dlg_btn_cancel_reload"):
             st.rerun()
 
 
+# 지연 주입된 신규 종목 정보 또는 폼 초기화 데이터가 있으면 위젯 인스턴스화 전에 안전하게 반영
+if st.session_state.get("pending_reg_stock"):
+    p_data = st.session_state.pop("pending_reg_stock")
+    _do_apply_new_stock_and_reset_form(p_data["found"], p_data["market"], p_data.get("reset_msg", False))
+
+
 with st.expander("➕ 신규 보유 종목 등록", expanded=bool(st.session_state.add_expander_expanded)):
-    st.caption("💡 **종목코드 또는 종목명**을 입력하고 **[🔍 종목명 자동 불러오기]**를 누르면 종목명과 현재가가 자동으로 입력됩니다.")
+
+    st.caption("💡 **종목코드 또는 종목명**을 입력하고 **[🔍 종목명 자동 불러오기]**를 누르면 종목명과 현재가(장종료 시 종가)가 매수가에 자동으로 입력됩니다.")
 
     # A. 종목 자동 검색 & 불러오기 바
     srch_c1, srch_c2, srch_c3 = st.columns([1, 2, 1.2])
@@ -1568,10 +1692,11 @@ with st.expander("➕ 신규 보유 종목 등록", expanded=bool(st.session_sta
                 st.session_state.add_expander_expanded = True
                 found = search_stock_by_ticker_or_name(query_input.strip(), market=in_market)
                 if found:
+                    actual_market = found.get("market") or in_market
                     if has_unsaved_registration_inputs(found["ticker"]):
-                        confirm_stock_reload_dialog(found, in_market)
+                        confirm_stock_reload_dialog(found, actual_market)
                     else:
-                        apply_new_stock_and_reset_form(found, in_market, reset_msg=False)
+                        apply_new_stock_and_reset_form(found, actual_market, reset_msg=False)
                         st.rerun()
                 else:
                     st.session_state.reg_lookup_msg = ("warning", f"⚠️ '{query_input}'에 대한 정보를 찾지 못했습니다. 종목명을 직접 입력해주세요.")
@@ -1735,6 +1860,108 @@ with st.expander("➕ 신규 보유 종목 등록", expanded=bool(st.session_sta
             else:
                 st.session_state.add_expander_expanded = True
                 st.error(add_msg)
+
+
+# ------------------------------------------------------------------------------
+# 8-1. 초슬림 퀵 에디터 가로 넓게 보기 모달 (@st.dialog)
+# ------------------------------------------------------------------------------
+@st.dialog("📱 초슬림 퀵 에디터 (가로 전체화면 모드)", width="large")
+def landscape_quick_editor_dialog(items, perf_df, repo, user_id):
+    st.caption("💡 가로로 넓게 보며 **계좌, 매수가, 수량, 목표가, 손절가, 메모**를 일괄 수정 후 저장합니다.")
+
+    dlg_rows = []
+    for _, r in perf_df.iterrows():
+        dlg_rows.append({
+            "_id": r["id"],
+            "계좌": str(r.get("account") or "기본"),
+            "시장": "🇰🇷 KRX" if r["market"] == "KRX" else "🇺🇸 US",
+            "종목명": r["name"],
+            "매수가": float(r["buy_price"]),
+            "보유 수량": float(r["quantity"]),
+            "목표가": float(r["target_price"]) if is_valid_price(r.get("target_price")) else 0.0,
+            "손절가": float(r["stop_loss_price"]) if is_valid_price(r.get("stop_loss_price")) else 0.0,
+            "메모": str(r.get("memo") or "")
+        })
+
+    dlg_df = pd.DataFrame(dlg_rows)
+    dlg_col_config = {
+        "_id": None,
+        "계좌": st.column_config.TextColumn("계좌 / 앱", width="small", max_chars=30),
+        "시장": st.column_config.TextColumn("시장", width="small", disabled=True),
+        "종목명": st.column_config.TextColumn("종목명", width="medium", disabled=True),
+        "매수가": st.column_config.NumberColumn("매수가", min_value=0.0, step=1.0, required=True),
+        "보유 수량": st.column_config.NumberColumn("보유 수량", min_value=0.0001, step=1.0, format="%g", required=True),
+        "목표가": st.column_config.NumberColumn("목표가 (0이면 해제)", min_value=0.0, step=1.0),
+        "손절가": st.column_config.NumberColumn("손절가 (0이면 해제)", min_value=0.0, step=1.0),
+        "메모": st.column_config.TextColumn("메모", width="large", max_chars=100)
+    }
+
+    edited_dlg = st.data_editor(
+        dlg_df,
+        column_config=dlg_col_config,
+        disabled=["시장", "종목명"],
+        use_container_width=True,
+        hide_index=True,
+        height=min(450, max(280, len(dlg_rows) * 38 + 60)),
+        key="dlg_slim_portfolio_editor"
+    )
+
+    d_col1, d_col2 = st.columns([2.5, 1.2], vertical_alignment="center")
+    with d_col1:
+        save_dlg_btn = st.button("💾 테이블 변경사항 일괄 저장", type="primary", use_container_width=True, key="dlg_save_slim_editor_btn")
+    with d_col2:
+        close_dlg_btn = st.button("❌ 닫기", type="secondary", use_container_width=True, key="dlg_close_landscape_btn")
+        if close_dlg_btn:
+            st.rerun()
+
+    if save_dlg_btn:
+        updated_count = 0
+        for _, row in edited_dlg.iterrows():
+            item_id = row["_id"]
+            orig_item = next((it for it in items if it.get("id") == item_id), None)
+            if not orig_item:
+                continue
+
+            new_acc = str(row.get("계좌") or "기본").strip() or "기본"
+            new_buy = float(row["매수가"])
+            new_qty = float(row["보유 수량"])
+            new_target = float(row["목표가"]) if float(row["목표가"]) > 0 else None
+            new_stop = float(row["손절가"]) if float(row["손절가"]) > 0 else None
+            new_memo = str(row["메모"]).strip() or None
+
+            orig_acc = str(orig_item.get("account") or "기본").strip() or "기본"
+            orig_buy = float(orig_item.get("buy_price", 0))
+            orig_qty = float(orig_item.get("quantity", 0))
+            orig_target = float(orig_item["target_price"]) if is_valid_price(orig_item.get("target_price")) else None
+            orig_stop = float(orig_item["stop_loss_price"]) if is_valid_price(orig_item.get("stop_loss_price")) else None
+            orig_memo = str(orig_item.get("memo") or "").strip() or None
+
+            if (
+                new_acc != orig_acc or
+                abs(new_buy - orig_buy) > 1e-4 or
+                abs(new_qty - orig_qty) > 1e-4 or
+                new_target != orig_target or
+                new_stop != orig_stop or
+                new_memo != orig_memo
+            ):
+                up_data = {
+                    "account": new_acc,
+                    "buy_price": new_buy,
+                    "quantity": new_qty,
+                    "target_price": new_target,
+                    "stop_loss_price": new_stop,
+                    "memo": new_memo
+                }
+                ok, _ = repo.update_item(item_id, up_data)
+                if ok:
+                    updated_count += 1
+
+        if updated_count > 0:
+            st.session_state.pending_toast = (f"💾 {updated_count}건의 종목 정보가 수정되었습니다.", "✨")
+            st.session_state.scroll_to_top = True
+            st.rerun()
+        else:
+            st.info("수정된 변경사항이 없습니다.")
 
 
 # ------------------------------------------------------------------------------
@@ -2047,7 +2274,13 @@ with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=Fal
         # 탭 2: 5개 필수 편집 열만 남긴 [초슬림 퀵 에디터]
         # ----------------------------------------------------------------------
         with tab_table_edit:
-            st.caption("💡 엑셀처럼 표에서 **계좌, 매수가, 수량, 목표가, 손절가, 메모**를 일괄 수정합니다.")
+            with st.container(key="slim_editor_header_container"):
+                norm_c1, norm_c2 = st.columns([3.2, 1.2], vertical_alignment="center")
+                with norm_c1:
+                    st.caption("💡 엑셀처럼 표에서 **계좌, 매수가, 수량, 목표가, 손절가, 메모**를 일괄 수정합니다.")
+                with norm_c2:
+                    if st.button("📱 가로 넓게 보기", key="btn_enter_table_landscape", use_container_width=True, help="모바일 환경에서 표를 가로 전체화면으로 넓게 편집합니다."):
+                        landscape_quick_editor_dialog(items, perf_df, repo, user_id)
 
             slim_rows = []
             for _, r in perf_df.iterrows():
@@ -2135,6 +2368,7 @@ with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=Fal
                     st.info("수정된 변경사항이 없습니다.")
 
 
+
 # ------------------------------------------------------------------------------
 # 10. 보유 종목 관련 최신 뉴스/공시 헤드라인
 # ------------------------------------------------------------------------------
@@ -2170,4 +2404,6 @@ with st.container(key="global_script_injector_container"):
     inject_tab_lock_and_loading_script()
     inject_number_input_enhancer_script()
     inject_currency_input_script()
+    inject_mobile_landscape_table_script()
+
 

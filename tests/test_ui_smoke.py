@@ -126,11 +126,15 @@ def test_stock_reload_dialog_and_reset_logic():
     assert "has_unsaved_registration_inputs" in port_code
     assert "apply_new_stock_and_reset_form" in port_code
     assert "@st.dialog" in port_code
+    assert "reg_in_buy_price" in port_code
+    assert "reg_buy_price" in port_code
+    assert "current_price" in port_code
     assert "reg_in_quantity" in port_code
     assert "reg_in_memo" in port_code
     assert "dlg_btn_confirm_reload" in port_code
     assert "dlg_btn_cancel_reload" in port_code
     assert "입력 초기화" in port_code
+
 
 def test_account_management_dialog_elements():
     with open("pages/2_포트폴리오.py", "r", encoding="utf-8") as f:
@@ -159,5 +163,22 @@ def test_morning_briefing_expander_ui():
     assert "refresh_daily_briefing_btn" in code
     assert "get_daily_briefing" in code
     assert "save_daily_briefing" in code
+
+
+def test_mobile_landscape_table_optimization():
+    with open("pages/2_포트폴리오.py", "r", encoding="utf-8") as f:
+        port_code = f.read()
+    assert "btn_enter_table_landscape" in port_code
+    assert "landscape_quick_editor_dialog" in port_code
+    assert "dlg_slim_portfolio_editor" in port_code
+    assert "inject_mobile_landscape_table_script" in port_code
+
+    with open("assets/style.css", "r", encoding="utf-8") as f:
+        css = f.read()
+    assert ".st-key-btn_enter_table_landscape" in css
+    assert "stElementToolbar" in css
+    assert "st-key-dlg_slim_portfolio_editor" in css
+
+
 
 

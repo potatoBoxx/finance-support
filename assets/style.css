@@ -2410,3 +2410,105 @@ iframe[width="0"] {
     }
 }
 
+/* ==========================================================================
+   초슬림 퀵 에디터 모바일 최적화 및 상단 툴바 겹침 방지 스타일
+   ========================================================================== */
+
+/* 1. Streamlit 테이블 내부 플로팅 툴바(Search, Download, Fullscreen) 위치 보정 (상단 버튼 겹침 완전 방지) */
+[data-testid="stDataEditor"] [data-testid="stElementToolbar"],
+[data-testid="stDataFrame"] [data-testid="stElementToolbar"] {
+    top: 6px !important;
+    right: 8px !important;
+    z-index: 10 !important;
+    opacity: 0.9 !important;
+}
+
+/* 2. 일반 모드 툴바 및 가로 넓게 보기 버튼 */
+.st-key-slim_editor_header_container {
+    margin-bottom: 0.85rem !important;
+}
+
+.st-key-btn_enter_table_landscape button {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.35) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.5) !important;
+    color: #60A5FA !important;
+    font-weight: 700 !important;
+    font-size: 0.84rem !important;
+    border-radius: 8px !important;
+    padding: 0.3rem 0.8rem !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.st-key-btn_enter_table_landscape button:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.45) 0%, rgba(37, 99, 235, 0.6) 100%) !important;
+    border-color: #93C5FD !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+}
+
+/* 3. 초슬림 퀵 에디터 가로 넓게 보기 다이얼로그 모달 최적화 */
+[data-testid="stDialog"]:has(.st-key-dlg_slim_portfolio_editor),
+div[role="dialog"]:has(.st-key-dlg_slim_portfolio_editor) {
+    background: #0B0F19 !important;
+}
+
+@media (max-width: 768px) {
+    div[role="dialog"]:has(.st-key-dlg_slim_portfolio_editor) {
+        width: 98vw !important;
+        max-width: 98vw !important;
+        height: 94dvh !important;
+        max-height: 94dvh !important;
+        top: 3dvh !important;
+        margin: 0 auto !important;
+        padding: 12px 14px 20px 14px !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+        background: #0B0F19 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85) !important;
+        overflow-y: auto !important;
+    }
+
+    div[role="dialog"]:has(.st-key-dlg_slim_portfolio_editor) [data-testid="stDialogHeader"] {
+        padding-bottom: 6px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        margin-bottom: 8px !important;
+    }
+}
+
+/* 가로(Landscape) 화면 최적화 */
+@media (orientation: landscape) and (max-height: 520px) {
+    div[role="dialog"]:has(.st-key-dlg_slim_portfolio_editor) {
+        width: 98vw !important;
+        max-width: 98vw !important;
+        height: 96dvh !important;
+        max-height: 96dvh !important;
+        top: 2dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 12px 16px 12px !important;
+    }
+}
+
+.st-key-dlg_close_landscape_btn button {
+    background: rgba(239, 68, 68, 0.18) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+    color: #F87171 !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.st-key-dlg_close_landscape_btn button:hover {
+    background: rgba(239, 68, 68, 0.35) !important;
+    border-color: #EF4444 !important;
+    color: #FFFFFF !important;
+}
+
+
