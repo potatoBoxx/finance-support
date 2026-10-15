@@ -171,13 +171,32 @@ def test_mobile_landscape_table_optimization():
     assert "btn_enter_table_landscape" in port_code
     assert "landscape_quick_editor_dialog" in port_code
     assert "dlg_slim_portfolio_editor" in port_code
-    assert "inject_mobile_landscape_table_script" in port_code
+    assert "dlg_close_landscape_btn" in port_code
+    assert "dlg_save_slim_editor_btn" in port_code
+    assert "0이면 해제" not in port_code
 
     with open("assets/style.css", "r", encoding="utf-8") as f:
         css = f.read()
     assert ".st-key-btn_enter_table_landscape" in css
     assert "stElementToolbar" in css
     assert "st-key-dlg_slim_portfolio_editor" in css
+    assert "rotate(90deg)" in css
+
+
+def test_confirm_delete_stock_dialog_ui():
+    with open("pages/2_포트폴리오.py", "r", encoding="utf-8") as f:
+        port_code = f.read()
+    assert "confirm_delete_stock_dialog" in port_code
+    assert "⚠️ 종목 삭제 확인" in port_code
+    assert "dlg_cancel_del_" in port_code
+    assert "dlg_confirm_del_" in port_code
+    assert "삭제된 종목과 거래 기록은 복구되지 않습니다" in port_code
+
+    with open("assets/style.css", "r", encoding="utf-8") as f:
+        css = f.read()
+    assert "st-key-dlg_confirm_del_" in css
+    assert "st-key-dlg_cancel_del_" in css
+
 
 
 

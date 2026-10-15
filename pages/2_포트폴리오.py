@@ -1867,7 +1867,14 @@ with st.expander("➕ 신규 보유 종목 등록", expanded=bool(st.session_sta
 # ------------------------------------------------------------------------------
 @st.dialog("📱 초슬림 퀵 에디터 (가로 전체화면 모드)", width="large")
 def landscape_quick_editor_dialog(items, perf_df, repo, user_id):
-    st.caption("💡 가로로 넓게 보며 **계좌, 매수가, 수량, 목표가, 손절가, 메모**를 일괄 수정 후 저장합니다.")
+    # 상단 닫기 및 일괄 저장 액션 바 (한눈에 보기 및 빠른 조작)
+    hdr_c1, hdr_c2 = st.columns([1.2, 2.0], vertical_alignment="center")
+    with hdr_c1:
+        close_dlg_btn = st.button("❌ 세로모드로 닫기", type="secondary", use_container_width=True, key="dlg_close_landscape_btn")
+        if close_dlg_btn:
+            st.rerun()
+    with hdr_c2:
+        save_dlg_btn = st.button("💾 테이블 변경사항 일괄 저장", type="primary", use_container_width=True, key="dlg_save_slim_editor_btn")
 
     dlg_rows = []
     for _, r in perf_df.iterrows():
@@ -1886,14 +1893,14 @@ def landscape_quick_editor_dialog(items, perf_df, repo, user_id):
     dlg_df = pd.DataFrame(dlg_rows)
     dlg_col_config = {
         "_id": None,
-        "계좌": st.column_config.TextColumn("계좌 / 앱", width="small", max_chars=30),
+        "계좌": st.column_config.TextColumn("계좌", width="small", max_chars=30),
         "시장": st.column_config.TextColumn("시장", width="small", disabled=True),
         "종목명": st.column_config.TextColumn("종목명", width="medium", disabled=True),
-        "매수가": st.column_config.NumberColumn("매수가", min_value=0.0, step=1.0, required=True),
-        "보유 수량": st.column_config.NumberColumn("보유 수량", min_value=0.0001, step=1.0, format="%g", required=True),
-        "목표가": st.column_config.NumberColumn("목표가 (0이면 해제)", min_value=0.0, step=1.0),
-        "손절가": st.column_config.NumberColumn("손절가 (0이면 해제)", min_value=0.0, step=1.0),
-        "메모": st.column_config.TextColumn("메모", width="large", max_chars=100)
+        "매수가": st.column_config.NumberColumn("매수가", width="small", min_value=0.0, step=1.0, required=True),
+        "보유 수량": st.column_config.NumberColumn("수량", width="small", min_value=0.0001, step=1.0, format="%g", required=True),
+        "목표가": st.column_config.NumberColumn("목표가", width="small", min_value=0.0, step=1.0),
+        "손절가": st.column_config.NumberColumn("손절가", width="small", min_value=0.0, step=1.0),
+        "메모": st.column_config.TextColumn("메모", width="medium", max_chars=100)
     }
 
     edited_dlg = st.data_editor(
@@ -1902,17 +1909,9 @@ def landscape_quick_editor_dialog(items, perf_df, repo, user_id):
         disabled=["시장", "종목명"],
         use_container_width=True,
         hide_index=True,
-        height=min(450, max(280, len(dlg_rows) * 38 + 60)),
+        height=min(340, max(220, len(dlg_rows) * 35 + 50)),
         key="dlg_slim_portfolio_editor"
     )
-
-    d_col1, d_col2 = st.columns([2.5, 1.2], vertical_alignment="center")
-    with d_col1:
-        save_dlg_btn = st.button("💾 테이블 변경사항 일괄 저장", type="primary", use_container_width=True, key="dlg_save_slim_editor_btn")
-    with d_col2:
-        close_dlg_btn = st.button("❌ 닫기", type="secondary", use_container_width=True, key="dlg_close_landscape_btn")
-        if close_dlg_btn:
-            st.rerun()
 
     if save_dlg_btn:
         updated_count = 0
@@ -1962,6 +1961,44 @@ def landscape_quick_editor_dialog(items, perf_df, repo, user_id):
             st.rerun()
         else:
             st.info("수정된 변경사항이 없습니다.")
+
+
+# ------------------------------------------------------------------------------
+# 8-2. 종목 삭제 확인 2-Step 모달 (@st.dialog)
+# ------------------------------------------------------------------------------
+@st.dialog("⚠️ 종목 삭제 확인", width="small")
+def confirm_delete_stock_dialog(stock_id: str, stock_name: str, ticker: str, repo):
+    ticker_str = str(ticker).strip() if ticker and str(ticker).strip() not in ("None", "nan", "NaN") else ""
+    ticker_disp = f" ({ticker_str})" if ticker_str else ""
+    st.markdown(
+        f"""
+        <div style="background: rgba(239, 68, 68, 0.08); border-left: 4px solid #EF4444; padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;">
+            <p style="margin: 0 0 6px 0; font-weight: 700; color: #F87171; font-size: 0.95rem;">
+                정말 <b>{stock_name}{ticker_disp}</b> 종목을 삭제하시겠습니까?
+            </p>
+            <p style="margin: 0; font-size: 0.9rem; color: #CBD5E1; line-height: 1.5;">
+                삭제된 종목과 거래 기록은 복구되지 않습니다.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.write("삭제를 진행하려면 아래 **[삭제 확인]** 버튼을 눌러주세요.")
+
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        if st.button("취소", type="secondary", use_container_width=True, key=f"dlg_cancel_del_{stock_id}"):
+            st.rerun()
+    with c2:
+        if st.button("삭제 확인", type="primary", use_container_width=True, key=f"dlg_confirm_del_{stock_id}"):
+            d_ok, d_msg = repo.delete_item(stock_id)
+            if d_ok:
+                st.session_state.pending_toast = (f"🗑️ [{stock_name}] 종목이 삭제되었습니다.", "ℹ️")
+                st.session_state.scroll_to_top = True
+                st.rerun()
+            else:
+                st.error(d_msg)
+
 
 
 # ------------------------------------------------------------------------------
@@ -2186,13 +2223,12 @@ with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=Fal
                                 st.error(msg)
                 with btn_col2:
                     if st.button("🗑️ 이 종목 삭제", type="secondary", use_container_width=True, key=f"m_del_btn_{sel_stock_id}"):
-                        d_ok, d_msg = repo.delete_item(sel_stock_id)
-                        if d_ok:
-                            st.session_state.pending_toast = (f"🗑️ [{target_row['name']}] 종목이 삭제되었습니다.", "ℹ️")
-                            st.session_state.scroll_to_top = True
-                            st.rerun()
-                        else:
-                            st.error(d_msg)
+                        confirm_delete_stock_dialog(
+                            sel_stock_id,
+                            str(target_row["name"]),
+                            str(target_row.get("ticker", "")),
+                            repo
+                        )
 
             with tab_rebalance:
                 st.caption("추가 매수(물타기/불타기) 또는 부분 매도 시 예상 평단가와 잔여 수량을 실시간 계산하여 원클릭으로 반영합니다.")
@@ -2304,8 +2340,8 @@ with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=Fal
                 "종목명": st.column_config.TextColumn("종목명", width="medium", disabled=True),
                 "매수가": st.column_config.NumberColumn("매수가", min_value=0.0, step=1.0, required=True),
                 "보유 수량": st.column_config.NumberColumn("보유 수량", min_value=0.0001, step=1.0, format="%g", required=True),
-                "목표가": st.column_config.NumberColumn("목표가 (0이면 해제)", min_value=0.0, step=1.0),
-                "손절가": st.column_config.NumberColumn("손절가 (0이면 해제)", min_value=0.0, step=1.0),
+                "목표가": st.column_config.NumberColumn("목표가", min_value=0.0, step=1.0),
+                "손절가": st.column_config.NumberColumn("손절가", min_value=0.0, step=1.0),
                 "메모": st.column_config.TextColumn("메모", width="large", max_chars=100)
             }
 
