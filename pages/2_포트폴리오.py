@@ -66,6 +66,8 @@ if "add_expander_expanded" not in st.session_state:
     st.session_state.add_expander_expanded = None
 if "pending_reg_stock" not in st.session_state:
     st.session_state.pending_reg_stock = None
+if "editor_landscape_mode" not in st.session_state:
+    st.session_state.editor_landscape_mode = False
 
 
 # ------------------------------------------------------------------------------
@@ -353,6 +355,311 @@ price_map = get_live_price_map(items)
 
 if st.session_state.add_expander_expanded is None:
     st.session_state.add_expander_expanded = (len(items) == 0)
+
+
+# ------------------------------------------------------------------------------
+# 6.0 네이티브 가로 와이드 퀵 에디터 모드 (Screen Orientation & Fullscreen API)
+# ------------------------------------------------------------------------------
+# --- [네이티브 가로 와이드 퀵 에디터 전용 스크립트 및 뷰 렌더러 정의] ---
+# ------------------------------------------------------------------------------
+# 8-1. 초슬림 퀵 에디터 네이티브 가로 화면 전환 헬퍼 및 전용 뷰
+# ------------------------------------------------------------------------------
+def inject_enter_landscape_script():
+    """모바일 네이티브 가로 화면 전환 스크립트 실행 (Screen Orientation & Fullscreen API)"""
+    js_code = """
+    <script>
+      (function() {
+        try {
+          const win = (typeof window !== 'undefined' && window.parent) || window;
+          const doc = win.document || (typeof document !== 'undefined' ? document : null);
+          if (!doc) return;
+          const docEl = doc.documentElement;
+          if (docEl && docEl.requestFullscreen) {
+            docEl.requestFullscreen().catch(function(err) { console.log(err); });
+          } else if (docEl && docEl.webkitRequestFullscreen) {
+            docEl.webkitRequestFullscreen().catch(function(err) { console.log(err); });
+          }
+          const scr = win.screen || (typeof screen !== 'undefined' ? screen : null);
+          if (scr && scr.orientation && scr.orientation.lock) {
+            scr.orientation.lock('landscape').catch(function(err) {
+              console.log("Orientation lock requires user gesture or browser support:", err);
+            });
+          }
+        } catch (e) {
+          console.log("Landscape enter exception:", e);
+        }
+      })();
+    </script>
+    """
+    try:
+        components.html(js_code, height=0, width=0)
+    except Exception:
+        pass
+
+
+def inject_exit_landscape_script():
+    """모바일 네이티브 세로 화면 복귀 스크립트 실행 (Exit Fullscreen & Orientation Unlock)"""
+    js_code = """
+    <script>
+      (function() {
+        try {
+          const win = (typeof window !== 'undefined' && window.parent) || window;
+          const doc = win.document || (typeof document !== 'undefined' ? document : null);
+          if (!doc) return;
+          if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+            if (doc.exitFullscreen) {
+              doc.exitFullscreen().catch(function(err) {});
+            } else if (doc.webkitExitFullscreen) {
+              doc.webkitExitFullscreen().catch(function(err) {});
+            }
+          }
+          const scr = win.screen || (typeof screen !== 'undefined' ? screen : null);
+          if (scr && scr.orientation && scr.orientation.unlock) {
+            scr.orientation.unlock();
+          }
+        } catch (e) {
+          console.log("Landscape exit exception:", e);
+        }
+      })();
+    </script>
+    """
+    try:
+        components.html(js_code, height=0, width=0)
+    except Exception:
+        pass
+
+
+def render_landscape_editor_view(items, repo, user_id, price_map, usd_rate):
+    """
+    네이티브 화면 회전 기반 퀵 에디터 가로 와이드 전용 뷰:
+    - 상단 배너들을 가리고 [❌ 세로모드로 복귀] 및 [💾 테이블 변경사항 일괄 저장] 액션 바 고정 (Sticky Header)
+    - data_editor가 화면 가로 100% 및 세로 70vh 이상을 채우며, 모든 컬럼이 한눈에 보이도록 배치
+    """
+    inject_enter_landscape_script()
+
+    # 상단 슬림 고정(Sticky Header) 액션 바
+    with st.container(key="landscape_editor_sticky_header"):
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                <div style="font-weight: 700; font-size: 1.02rem; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">
+                    <span>📱 퀵 에디터 가로 와이드 뷰</span>
+                    <span style="background: rgba(59, 130, 246, 0.2); color: #93C5FD; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.35);">
+                        {len(items)}개 종목
+                    </span>
+                </div>
+                <div style="font-size: 0.76rem; color: #94A3B8;">
+                    🔄 기기 회전 시 와이드 전용 | ↔️ 좌우 스크롤 가능
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        c_exit, c_save = st.columns([1, 1], vertical_alignment="center")
+        with c_exit:
+            if st.button("❌ 세로모드로 복귀", type="secondary", use_container_width=True, key="btn_exit_landscape_mode"):
+                st.session_state.editor_landscape_mode = False
+                inject_exit_landscape_script()
+                st.rerun()
+        with c_save:
+            save_land_btn = st.button("💾 테이블 변경사항 일괄 저장", type="primary", use_container_width=True, key="btn_save_landscape_editor")
+
+    if not items:
+        st.info("등록된 종목이 없습니다. [❌ 세로모드로 복귀] 버튼을 눌러 신규 종목을 먼저 등록해주세요.")
+        return
+
+    land_rows = []
+    for it in items:
+        mkt = it.get("market", "KRX")
+        land_rows.append({
+            "_id": it["id"],
+            "계좌": str(it.get("account") or "기본"),
+            "시장": "🇰🇷 KRX" if mkt == "KRX" else "🇺🇸 US",
+            "종목명": it.get("name", ""),
+            "매수가": float(it.get("buy_price", 0.0)),
+            "보유 수량": float(it.get("quantity", 0.0)),
+            "목표가": float(it["target_price"]) if is_valid_price(it.get("target_price")) else 0.0,
+            "손절가": float(it["stop_loss_price"]) if is_valid_price(it.get("stop_loss_price")) else 0.0,
+            "메모": str(it.get("memo") or "")
+        })
+
+    land_df = pd.DataFrame(land_rows)
+    land_col_config = {
+        "_id": None,
+        "계좌": st.column_config.TextColumn("계좌", width="small", max_chars=30),
+        "시장": st.column_config.TextColumn("시장", width="small", disabled=True),
+        "종목명": st.column_config.TextColumn("종목명", width="medium", disabled=True),
+        "매수가": st.column_config.NumberColumn("매수가", width="small", min_value=0.0, step=1.0, required=True),
+        "보유 수량": st.column_config.NumberColumn("수량", width="small", min_value=0.0001, step=1.0, format="%g", required=True),
+        "목표가": st.column_config.NumberColumn("목표가", width="small", min_value=0.0, step=1.0),
+        "손절가": st.column_config.NumberColumn("손절가", width="small", min_value=0.0, step=1.0),
+        "메모": st.column_config.TextColumn("메모", width="large", max_chars=100)
+    }
+
+    edited_land = st.data_editor(
+        land_df,
+        column_config=land_col_config,
+        disabled=["시장", "종목명"],
+        use_container_width=True,
+        hide_index=True,
+        height=max(550, min(850, len(land_rows) * 38 + 60)),
+        key="landscape_portfolio_data_editor"
+    )
+
+    if save_land_btn:
+        updated_count = 0
+        for _, row in edited_land.iterrows():
+            item_id = row["_id"]
+            orig_item = next((it for it in items if it.get("id") == item_id), None)
+            if not orig_item:
+                continue
+
+            new_acc = str(row.get("계좌") or "기본").strip() or "기본"
+            new_buy = float(row["매수가"])
+            new_qty = float(row["보유 수량"])
+            new_target = float(row["목표가"]) if float(row["목표가"]) > 0 else None
+            new_stop = float(row["손절가"]) if float(row["손절가"]) > 0 else None
+            new_memo = str(row["메모"]).strip() or None
+
+            orig_acc = str(orig_item.get("account") or "기본").strip() or "기본"
+            orig_buy = float(orig_item.get("buy_price", 0))
+            orig_qty = float(orig_item.get("quantity", 0))
+            orig_target = float(orig_item["target_price"]) if is_valid_price(orig_item.get("target_price")) else None
+            orig_stop = float(orig_item["stop_loss_price"]) if is_valid_price(orig_item.get("stop_loss_price")) else None
+            orig_memo = str(orig_item.get("memo") or "").strip() or None
+
+            if (
+                new_acc != orig_acc or
+                abs(new_buy - orig_buy) > 1e-4 or
+                abs(new_qty - orig_qty) > 1e-4 or
+                new_target != orig_target or
+                new_stop != orig_stop or
+                new_memo != orig_memo
+            ):
+                up_data = {
+                    "account": new_acc,
+                    "buy_price": new_buy,
+                    "quantity": new_qty,
+                    "target_price": new_target,
+                    "stop_loss_price": new_stop,
+                    "memo": new_memo
+                }
+                ok, _ = repo.update_item(item_id, up_data)
+                if ok:
+                    updated_count += 1
+
+        if updated_count > 0:
+            st.session_state.pending_toast = (f"💾 {updated_count}건의 종목 정보가 저장되었습니다.", "✨")
+            st.rerun()
+        else:
+            st.info("수정된 변경사항이 없습니다.")
+
+
+def inject_mobile_landscape_table_script():
+    """
+    초슬림 퀵 에디터 가로 전체화면 모드(Landscape View) 스크립트:
+    1. '가로 넓게 보기' 버튼 클릭 즉시:
+       - User Gesture 내에서 document.documentElement.requestFullscreen() 및 screen.orientation.lock('landscape') 시도
+    2. '닫기' 버튼 또는 다이얼로그 닫기 클릭 시:
+       - document.exitFullscreen() 및 screen.orientation.unlock() 복귀
+    """
+    js_raw = """
+(function() {
+    try {
+        var doc = (typeof window !== 'undefined' && window.parent && window.parent.document) || (typeof document !== 'undefined' ? document : null);
+        var win = (typeof window !== 'undefined' && window.parent) || window;
+        if (!doc) return;
+
+        function enterLandscape() {
+            try {
+                var docEl = doc.documentElement;
+                if (docEl && docEl.requestFullscreen) {
+                    docEl.requestFullscreen().catch(function(){});
+                } else if (docEl && docEl.webkitRequestFullscreen) {
+                    docEl.webkitRequestFullscreen().catch(function(){});
+                }
+                var scr = win.screen || (typeof screen !== 'undefined' ? screen : null);
+                if (scr && scr.orientation && scr.orientation.lock) {
+                    scr.orientation.lock('landscape').catch(function(){});
+                }
+            } catch(e) {}
+        }
+
+        function exitLandscape() {
+            try {
+                if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+                    if (doc.exitFullscreen) {
+                        doc.exitFullscreen().catch(function(){});
+                    } else if (doc.webkitExitFullscreen) {
+                        doc.webkitExitFullscreen().catch(function(){});
+                    }
+                }
+                var scr = win.screen || (typeof screen !== 'undefined' ? screen : null);
+                if (scr && scr.orientation && scr.orientation.unlock) {
+                    scr.orientation.unlock();
+                }
+            } catch(e) {}
+        }
+
+        win.enterLandscape = enterLandscape;
+        win.exitLandscape = exitLandscape;
+        if (typeof window !== 'undefined') {
+            window.enterLandscape = enterLandscape;
+            window.exitLandscape = exitLandscape;
+        }
+
+        function attachLandscapeHandlers() {
+            try {
+                var buttons = doc.querySelectorAll('button');
+                buttons.forEach(function(btn) {
+                    var txt = (btn.innerText || btn.textContent || '').trim();
+                    var aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+
+                    if (txt.indexOf('가로 넓게 보기') !== -1 && !btn._landscapeEnterAttached) {
+                        btn._landscapeEnterAttached = true;
+                        btn.addEventListener('click', function() {
+                            enterLandscape();
+                        });
+                    }
+
+                    if ((txt.indexOf('세로모드로 복귀') !== -1 || txt.indexOf('세로모드로 닫기') !== -1 || txt.indexOf('닫기') !== -1 || aria === 'close') && !btn._landscapeExitAttached) {
+                        btn._landscapeExitAttached = true;
+                        btn.addEventListener('click', function() {
+                            exitLandscape();
+                        });
+                    }
+                });
+            } catch(e) {}
+        }
+
+        if (!doc._finscopeLandscapeObs) {
+            doc._finscopeLandscapeObs = new MutationObserver(attachLandscapeHandlers);
+            if (doc.body) {
+                doc._finscopeLandscapeObs.observe(doc.body, { childList: true, subtree: true });
+            }
+            doc.addEventListener('fullscreenchange', function() {
+                if (!doc.fullscreenElement) {
+                    exitLandscape();
+                }
+            });
+        }
+        attachLandscapeHandlers();
+    } catch(err) {}
+})();
+"""
+    js_code = f"<script>{js_raw}</script>"
+    st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
+    try:
+        import streamlit.components.v1 as components
+        components.html(js_code, height=0, width=0)
+    except Exception:
+        pass
+
+if st.session_state.get("editor_landscape_mode", False):
+    render_landscape_editor_view(items, repo, user_id, price_map, usd_rate)
+    with st.container(key="global_script_injector_container"):
+        inject_mobile_landscape_table_script()
+    st.stop()
 
 
 # ------------------------------------------------------------------------------
@@ -1072,93 +1379,6 @@ def inject_currency_input_script():
         pass
 
 
-def inject_mobile_landscape_table_script():
-    """
-    초슬림 퀵 에디터 가로 전체화면 모드(Landscape View) 스크립트:
-    1. '가로 넓게 보기' 버튼 클릭 즉시:
-       - User Gesture 내에서 document.documentElement.requestFullscreen() 및 screen.orientation.lock('landscape') 시도
-    2. '닫기' 버튼 또는 다이얼로그 닫기 클릭 시:
-       - document.exitFullscreen() 및 screen.orientation.unlock() 복귀
-    """
-    js_raw = """
-(function() {
-    try {
-        var doc = (typeof window !== 'undefined' && window.parent && window.parent.document) || (typeof document !== 'undefined' ? document : null);
-        var win = (typeof window !== 'undefined' && window.parent) || window;
-        if (!doc) return;
-
-        function exitLandscape() {
-            try {
-                if (doc.fullscreenElement || doc.webkitFullscreenElement) {
-                    if (doc.exitFullscreen) {
-                        doc.exitFullscreen().catch(function(){});
-                    } else if (doc.webkitExitFullscreen) {
-                        doc.webkitExitFullscreen().catch(function(){});
-                    }
-                }
-                if (win.screen && win.screen.orientation && win.screen.orientation.unlock) {
-                    win.screen.orientation.unlock();
-                }
-            } catch(e) {}
-        }
-
-        function attachLandscapeHandlers() {
-            try {
-                var buttons = doc.querySelectorAll('button');
-                buttons.forEach(function(btn) {
-                    var txt = (btn.innerText || btn.textContent || '').trim();
-                    var aria = (btn.getAttribute('aria-label') || '').toLowerCase();
-
-                    if (txt.indexOf('가로 넓게 보기') !== -1 && !btn._landscapeEnterAttached) {
-                        btn._landscapeEnterAttached = true;
-                        btn.addEventListener('click', function() {
-                            try {
-                                if (doc.documentElement.requestFullscreen) {
-                                    doc.documentElement.requestFullscreen().catch(function(){});
-                                } else if (doc.documentElement.webkitRequestFullscreen) {
-                                    doc.documentElement.webkitRequestFullscreen().catch(function(){});
-                                }
-                                if (win.screen && win.screen.orientation && win.screen.orientation.lock) {
-                                    win.screen.orientation.lock('landscape').catch(function(){});
-                                }
-                            } catch(e) {}
-                        });
-                    }
-
-                    if ((txt.indexOf('닫기') !== -1 || aria === 'close' || aria.indexOf('닫기') !== -1) && !btn._landscapeExitAttached) {
-                        btn._landscapeExitAttached = true;
-                        btn.addEventListener('click', function() {
-                            exitLandscape();
-                        });
-                    }
-                });
-            } catch(e) {}
-        }
-
-        if (!doc._finscopeLandscapeObs) {
-            doc._finscopeLandscapeObs = new MutationObserver(attachLandscapeHandlers);
-            if (doc.body) {
-                doc._finscopeLandscapeObs.observe(doc.body, { childList: true, subtree: true });
-            }
-            doc.addEventListener('fullscreenchange', function() {
-                if (!doc.fullscreenElement) {
-                    exitLandscape();
-                }
-            });
-        }
-        attachLandscapeHandlers();
-    } catch(err) {}
-})();
-"""
-    js_code = f"<script>{js_raw}</script>"
-    st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
-    try:
-        import streamlit.components.v1 as components
-        components.html(js_code, height=0, width=0)
-    except Exception:
-        pass
-
-
 def _format_currency_cb(widget_key: str, market: str):
     raw_text = st.session_state.get(widget_key, "")
     cleaned = re.sub(r"[^\d.]", "", str(raw_text).strip())
@@ -1863,107 +2083,6 @@ with st.expander("➕ 신규 보유 종목 등록", expanded=bool(st.session_sta
 
 
 # ------------------------------------------------------------------------------
-# 8-1. 초슬림 퀵 에디터 가로 넓게 보기 모달 (@st.dialog)
-# ------------------------------------------------------------------------------
-@st.dialog("📱 초슬림 퀵 에디터 (가로 전체화면 모드)", width="large")
-def landscape_quick_editor_dialog(items, perf_df, repo, user_id):
-    # 상단 닫기 및 일괄 저장 액션 바 (한눈에 보기 및 빠른 조작)
-    hdr_c1, hdr_c2 = st.columns([1.2, 2.0], vertical_alignment="center")
-    with hdr_c1:
-        close_dlg_btn = st.button("❌ 세로모드로 닫기", type="secondary", use_container_width=True, key="dlg_close_landscape_btn")
-        if close_dlg_btn:
-            st.rerun()
-    with hdr_c2:
-        save_dlg_btn = st.button("💾 테이블 변경사항 일괄 저장", type="primary", use_container_width=True, key="dlg_save_slim_editor_btn")
-
-    dlg_rows = []
-    for _, r in perf_df.iterrows():
-        dlg_rows.append({
-            "_id": r["id"],
-            "계좌": str(r.get("account") or "기본"),
-            "시장": "🇰🇷 KRX" if r["market"] == "KRX" else "🇺🇸 US",
-            "종목명": r["name"],
-            "매수가": float(r["buy_price"]),
-            "보유 수량": float(r["quantity"]),
-            "목표가": float(r["target_price"]) if is_valid_price(r.get("target_price")) else 0.0,
-            "손절가": float(r["stop_loss_price"]) if is_valid_price(r.get("stop_loss_price")) else 0.0,
-            "메모": str(r.get("memo") or "")
-        })
-
-    dlg_df = pd.DataFrame(dlg_rows)
-    dlg_col_config = {
-        "_id": None,
-        "계좌": st.column_config.TextColumn("계좌", width="small", max_chars=30),
-        "시장": st.column_config.TextColumn("시장", width="small", disabled=True),
-        "종목명": st.column_config.TextColumn("종목명", width="medium", disabled=True),
-        "매수가": st.column_config.NumberColumn("매수가", width="small", min_value=0.0, step=1.0, required=True),
-        "보유 수량": st.column_config.NumberColumn("수량", width="small", min_value=0.0001, step=1.0, format="%g", required=True),
-        "목표가": st.column_config.NumberColumn("목표가", width="small", min_value=0.0, step=1.0),
-        "손절가": st.column_config.NumberColumn("손절가", width="small", min_value=0.0, step=1.0),
-        "메모": st.column_config.TextColumn("메모", width="medium", max_chars=100)
-    }
-
-    edited_dlg = st.data_editor(
-        dlg_df,
-        column_config=dlg_col_config,
-        disabled=["시장", "종목명"],
-        use_container_width=True,
-        hide_index=True,
-        height=min(340, max(220, len(dlg_rows) * 35 + 50)),
-        key="dlg_slim_portfolio_editor"
-    )
-
-    if save_dlg_btn:
-        updated_count = 0
-        for _, row in edited_dlg.iterrows():
-            item_id = row["_id"]
-            orig_item = next((it for it in items if it.get("id") == item_id), None)
-            if not orig_item:
-                continue
-
-            new_acc = str(row.get("계좌") or "기본").strip() or "기본"
-            new_buy = float(row["매수가"])
-            new_qty = float(row["보유 수량"])
-            new_target = float(row["목표가"]) if float(row["목표가"]) > 0 else None
-            new_stop = float(row["손절가"]) if float(row["손절가"]) > 0 else None
-            new_memo = str(row["메모"]).strip() or None
-
-            orig_acc = str(orig_item.get("account") or "기본").strip() or "기본"
-            orig_buy = float(orig_item.get("buy_price", 0))
-            orig_qty = float(orig_item.get("quantity", 0))
-            orig_target = float(orig_item["target_price"]) if is_valid_price(orig_item.get("target_price")) else None
-            orig_stop = float(orig_item["stop_loss_price"]) if is_valid_price(orig_item.get("stop_loss_price")) else None
-            orig_memo = str(orig_item.get("memo") or "").strip() or None
-
-            if (
-                new_acc != orig_acc or
-                abs(new_buy - orig_buy) > 1e-4 or
-                abs(new_qty - orig_qty) > 1e-4 or
-                new_target != orig_target or
-                new_stop != orig_stop or
-                new_memo != orig_memo
-            ):
-                up_data = {
-                    "account": new_acc,
-                    "buy_price": new_buy,
-                    "quantity": new_qty,
-                    "target_price": new_target,
-                    "stop_loss_price": new_stop,
-                    "memo": new_memo
-                }
-                ok, _ = repo.update_item(item_id, up_data)
-                if ok:
-                    updated_count += 1
-
-        if updated_count > 0:
-            st.session_state.pending_toast = (f"💾 {updated_count}건의 종목 정보가 수정되었습니다.", "✨")
-            st.session_state.scroll_to_top = True
-            st.rerun()
-        else:
-            st.info("수정된 변경사항이 없습니다.")
-
-
-# ------------------------------------------------------------------------------
 # 8-2. 종목 삭제 확인 2-Step 모달 (@st.dialog)
 # ------------------------------------------------------------------------------
 @st.dialog("⚠️ 종목 삭제 확인", width="small")
@@ -2316,7 +2435,9 @@ with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=Fal
                     st.caption("💡 엑셀처럼 표에서 **계좌, 매수가, 수량, 목표가, 손절가, 메모**를 일괄 수정합니다.")
                 with norm_c2:
                     if st.button("📱 가로 넓게 보기", key="btn_enter_table_landscape", use_container_width=True, help="모바일 환경에서 표를 가로 전체화면으로 넓게 편집합니다."):
-                        landscape_quick_editor_dialog(items, perf_df, repo, user_id)
+                        st.session_state.editor_landscape_mode = True
+                        inject_enter_landscape_script()
+                        st.rerun()
 
             slim_rows = []
             for _, r in perf_df.iterrows():

@@ -169,18 +169,28 @@ def test_mobile_landscape_table_optimization():
     with open("pages/2_포트폴리오.py", "r", encoding="utf-8") as f:
         port_code = f.read()
     assert "btn_enter_table_landscape" in port_code
-    assert "landscape_quick_editor_dialog" in port_code
-    assert "dlg_slim_portfolio_editor" in port_code
-    assert "dlg_close_landscape_btn" in port_code
-    assert "dlg_save_slim_editor_btn" in port_code
+    assert "editor_landscape_mode" in port_code
+    assert "render_landscape_editor_view" in port_code
+    assert "landscape_portfolio_data_editor" in port_code
+    assert "btn_exit_landscape_mode" in port_code
+    assert "btn_save_landscape_editor" in port_code
+    assert "requestFullscreen" in port_code
+    assert "orientation.lock" in port_code
+    assert "landscape_quick_editor_dialog" not in port_code
     assert "0이면 해제" not in port_code
+
+    idx_def = port_code.index("def render_landscape_editor_view")
+    call_str = 'if st.session_state.get("editor_landscape_mode", False):\n    render_landscape_editor_view('
+    idx_call = port_code.index(call_str)
+    assert idx_def < idx_call, "render_landscape_editor_view must be defined before it is called"
 
     with open("assets/style.css", "r", encoding="utf-8") as f:
         css = f.read()
     assert ".st-key-btn_enter_table_landscape" in css
-    assert "stElementToolbar" in css
-    assert "st-key-dlg_slim_portfolio_editor" in css
-    assert "rotate(90deg)" in css
+    assert "st-key-landscape_editor_sticky_header" in css
+    assert "st-key-landscape_portfolio_data_editor" in css
+    assert "rotate(90deg)" not in css
+
 
 
 def test_confirm_delete_stock_dialog_ui():
