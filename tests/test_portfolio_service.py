@@ -94,6 +94,18 @@ def test_get_live_price_map_fallback():
     assert price_map["UNKNOWN_TICKER"] == 5000.0
 
 
+def test_get_live_price_map_alphanumeric_krx_stock():
+    items = [
+        {"ticker": "0155M0", "name": "ACE US SMR Nuclear TOP 10", "market": "KRX", "buy_price": 6837.0, "quantity": 21.0}
+    ]
+    price_map = get_live_price_map(items)
+    assert "0155M0" in price_map
+    assert price_map["0155M0"] > 0
+    # Must get real market price (e.g. 5385), not fall back to buy price (6837.0)
+    assert price_map["0155M0"] != 6837.0
+
+
+
 def test_format_quantity():
     from services.portfolio_service import format_quantity
     assert format_quantity(15.0) == "15주"

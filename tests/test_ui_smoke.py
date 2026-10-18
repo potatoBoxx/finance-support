@@ -208,6 +208,22 @@ def test_confirm_delete_stock_dialog_ui():
     assert "st-key-dlg_cancel_del_" in css
 
 
+def test_mobile_portfolio_edit_form_and_font_optimization():
+    with open("pages/2_포트폴리오.py", "r", encoding="utf-8") as f:
+        port_code = f.read()
+    assert "portfolio_edit_expander" in port_code
+    assert 'on_change="rerun"' in port_code
+    assert "on_mobile_stock_change" in port_code
+    assert "selected-stock-name" in port_code
+
+    with open("assets/style.css", "r", encoding="utf-8") as f:
+        css = f.read()
+    assert ".st-key-mobile_target_stock" in css
+    assert "selected-stock-name" in css
+    assert "data-baseweb=\"popover\"" in css
+
+
+
 
 
 

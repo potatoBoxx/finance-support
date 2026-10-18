@@ -68,6 +68,8 @@ if "pending_reg_stock" not in st.session_state:
     st.session_state.pending_reg_stock = None
 if "editor_landscape_mode" not in st.session_state:
     st.session_state.editor_landscape_mode = False
+if "portfolio_edit_expander" not in st.session_state:
+    st.session_state.portfolio_edit_expander = False
 
 
 # ------------------------------------------------------------------------------
@@ -2123,7 +2125,12 @@ def confirm_delete_stock_dialog(stock_id: str, stock_name: str, ticker: str, rep
 # ------------------------------------------------------------------------------
 # 9. 접이식 포트폴리오 종목 편집 및 관리 (간편 폼 & 초슬림 퀵 에디터)
 # ------------------------------------------------------------------------------
-with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=False):
+with st.expander(
+    "⚙️ 포트폴리오 종목 편집 및 관리",
+    expanded=st.session_state.portfolio_edit_expander,
+    key="portfolio_edit_expander",
+    on_change="rerun"
+):
     st.caption("💡 보유 종목의 매수가, 수량, 목표가, 손절가를 직접 수정하거나 추가 매수·매도 거래를 시뮬레이션하여 반영할 수 있습니다.")
 
     if perf_df.empty:
@@ -2148,7 +2155,15 @@ with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=Fal
                 )
                 stock_options[stock_label] = r["id"]
 
-            sel_label = st.selectbox("수정 또는 거래할 종목 선택*", options=list(stock_options.keys()), key="mobile_target_stock")
+            def on_mobile_stock_change():
+                st.session_state.portfolio_edit_expander = True
+
+            sel_label = st.selectbox(
+                "수정 또는 거래할 종목 선택*",
+                options=list(stock_options.keys()),
+                key="mobile_target_stock",
+                on_change=on_mobile_stock_change
+            )
             sel_stock_id = stock_options.get(sel_label)
             target_row = perf_df[perf_df["id"] == sel_stock_id].iloc[0]
 
@@ -2185,11 +2200,11 @@ with st.expander("⚙️ 포트폴리오 종목 편집 및 관리", expanded=Fal
 
             badge_sl = '<span class="badge-stop-loss" style="margin-left: 8px;">🚨 손절 경고</span>' if target_row['is_stop_loss'] else ''
             st.markdown(
-                f'<div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.85rem 1.1rem; margin-top: 0.5rem; margin-bottom: 1rem;">'
+                f'<div class="selected-stock-summary-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.85rem 1.1rem; margin-top: 0.5rem; margin-bottom: 1rem;">'
                 f'<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">'
                 f'<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">'
                 f'<span class="market-account-chip">{target_row["market"]} · {curr_account}</span>'
-                f'<b style="font-size: 1.1rem; color: #F8FAFC; word-break: keep-all;">{target_row["name"]}</b>'
+                f'<b class="selected-stock-name" style="color: #F8FAFC; word-break: keep-all;">{target_row["name"]}</b>'
                 f'<span style="color: #94A3B8; font-size: 0.85rem; margin-left: 4px;">({target_row["ticker"]})</span>'
                 f'{badge_sl}'
                 f'</div>'

@@ -40,8 +40,8 @@ def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame
                 if t and p > 0:
                     npay_dict[t] = p
 
-    # 2. 각 종목 현재가 매핑
-    missing_tickers = []
+    # 2. 각 종목 현재가 매핑 (Npay 캐시 우선)
+    missing_items = []
     for item in items:
         ticker = str(item.get("ticker", "")).strip().upper()
         if not ticker:
@@ -50,17 +50,43 @@ def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame
         if ticker in npay_dict:
             price_map[ticker] = npay_dict[ticker]
         else:
-            missing_tickers.append(ticker)
+            missing_items.append(item)
 
-    # 3. Npay 미포함 종목에 대한 yfinance 조회 (필요 시)
-    if missing_tickers:
+    # 3. Npay Top 100 미포함 종목에 대한 네이버 증권/해외 API (stock_search_service) 우선 실시간 조회
+    still_missing = []
+    if missing_items:
+        try:
+            from services.stock_search_service import search_stock_by_ticker_or_name
+            for it in missing_items:
+                t = str(it.get("ticker", "")).strip().upper()
+                m = str(it.get("market", "")).strip().upper() or None
+                nm = str(it.get("name", "")).strip() or None
+                found = None
+                try:
+                    found = search_stock_by_ticker_or_name(t, market=m)
+                    if not found and nm:
+                        found = search_stock_by_ticker_or_name(nm, market=m)
+                except Exception as e:
+                    logger.debug(f"stock_search_service lookup failed for {t}: {e}")
+
+                if found and float(found.get("current_price") or found.get("price") or 0.0) > 0:
+                    price_map[t] = float(found.get("current_price") or found.get("price"))
+                else:
+                    still_missing.append(it)
+        except Exception as e:
+            logger.debug(f"stock_search_service import/lookup error: {e}")
+            still_missing = missing_items
+
+    # 4. 여전히 미발견된 종목에 대한 yfinance 조회 (필요 시 보조 조회)
+    if still_missing:
         try:
             import yfinance as yf
             # 쉼표 구분 티커 일괄 조회
             yf_symbols = []
-            for t in missing_tickers:
-                # 한국 종목코드(6자리 숫자)의 경우 접미사 처리
-                if t.isdigit() and len(t) == 6:
+            for it in still_missing:
+                t = str(it.get("ticker", "")).strip().upper()
+                m = str(it.get("market", "")).strip().upper()
+                if m == "KRX" or (t.isdigit() and len(t) == 6):
                     yf_symbols.append(f"{t}.KS")
                 else:
                     yf_symbols.append(t)
@@ -69,7 +95,8 @@ def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame
                 data = yf.download(yf_symbols, period="1d", interval="1d", progress=False, timeout=4)
                 close_df = data["Close"] if "Close" in data else None
                 if close_df is not None and not close_df.empty:
-                    for orig_t, yf_t in zip(missing_tickers, yf_symbols):
+                    for it, yf_t in zip(still_missing, yf_symbols):
+                        orig_t = str(it.get("ticker", "")).strip().upper()
                         if yf_t in close_df.columns:
                             val = close_df[yf_t].dropna()
                             if len(val) > 0:
@@ -77,7 +104,7 @@ def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame
         except Exception as e:
             logger.debug(f"yfinance missing ticker fetch skipped: {e}")
 
-    # 4. 여전히 현재가가 없는 경우 매수가 기준 안전한 Fallback 매핑
+    # 5. 여전히 현재가가 없는 경우 매수가 기준 안전한 Fallback 매핑
     for item in items:
         ticker = str(item.get("ticker", "")).strip().upper()
         if ticker and ticker not in price_map:

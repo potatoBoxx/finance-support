@@ -2410,6 +2410,45 @@ iframe[width="0"] {
     [data-testid="stTabs"] [data-baseweb="tab-list"] {
         margin-bottom: 0.3rem !important;
     }
+
+    /* 모바일 간편 종목 수정 & 거래 폼: 긴 종목명 짤림 방지 및 폰트 축소 */
+    .st-key-mobile_target_stock div[data-baseweb="select"] {
+        font-size: 0.82rem !important;
+    }
+
+    .st-key-mobile_target_stock div[data-baseweb="select"] * {
+        font-size: 0.82rem !important;
+        line-height: 1.35 !important;
+    }
+
+    .st-key-mobile_target_stock div[data-baseweb="select"] div {
+        white-space: normal !important;
+        word-break: keep-all !important;
+    }
+
+    /* 드롭다운 옵션 목록(팝오버) 폰트 축소 및 줄바꿈/여백 최적화 */
+    div[data-baseweb="popover"] ul[role="listbox"] li,
+    div[data-baseweb="popover"] ul[data-baseweb="menu"] li,
+    div[data-baseweb="popover"] li[role="option"] {
+        font-size: 0.82rem !important;
+        line-height: 1.35 !important;
+        white-space: normal !important;
+        word-break: keep-all !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+    }
+
+    div[data-baseweb="popover"] ul[role="listbox"] li *,
+    div[data-baseweb="popover"] ul[data-baseweb="menu"] li *,
+    div[data-baseweb="popover"] li[role="option"] * {
+        font-size: 0.82rem !important;
+        line-height: 1.35 !important;
+    }
+
+    .selected-stock-name {
+        font-size: 0.92rem !important;
+        letter-spacing: -0.3px !important;
+    }
 }
 
 /* ==========================================================================
@@ -2587,6 +2626,48 @@ button[key*="dlg_cancel_del_"]:hover {
     color: #F8FAFC !important;
     border-color: rgba(255, 255, 255, 0.35) !important;
 }
+
+/* ==========================================================================
+   5. 간편 종목 수정 & 거래 폼: 모바일 종목 선택 셀렉트박스 폰트 크기 및 줄바꿈 최적화
+   ========================================================================== */
+.st-key-mobile_target_stock div[data-baseweb="select"] {
+    font-size: 0.86rem !important;
+}
+
+.st-key-mobile_target_stock div[data-baseweb="select"] * {
+    font-size: 0.86rem !important;
+    line-height: 1.35 !important;
+}
+
+.st-key-mobile_target_stock div[data-baseweb="select"] div {
+    white-space: normal !important;
+    word-break: keep-all !important;
+}
+
+/* BaseWeb 드롭다운 옵션 목록(팝오버): 긴 종목명이 짤리지 않도록 폰트 축소 및 줄바꿈 지원 */
+div[data-baseweb="popover"] ul[role="listbox"] li,
+div[data-baseweb="popover"] ul[data-baseweb="menu"] li,
+div[data-baseweb="popover"] li[role="option"] {
+    font-size: 0.86rem !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+
+div[data-baseweb="popover"] ul[role="listbox"] li *,
+div[data-baseweb="popover"] ul[data-baseweb="menu"] li *,
+div[data-baseweb="popover"] li[role="option"] * {
+    font-size: 0.86rem !important;
+    line-height: 1.35 !important;
+}
+
+.selected-stock-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
 
 
 
