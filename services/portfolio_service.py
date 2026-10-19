@@ -11,9 +11,9 @@ from services.npay_service import fetch_npay_items
 logger = logging.getLogger(__name__)
 
 
-def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame]] = None) -> dict[str, float]:
+def _fetch_live_price_map_raw(items: list[dict], cached_dfs: Optional[list[pd.DataFrame]] = None) -> dict[str, float]:
     """
-    포트폴리오 종목 리스트의 티커를 기준으로 실시간 현재가 맵을 생성합니다.
+    포트폴리오 종목 리스트의 티커를 기준으로 실시간 현재가 맵을 직접 수집하는 내부 함수.
     1. 인메모리 Npay 캐시 DataFrame에서 우선 탐색
     2. 미발견 종목은 yfinance 조회 또는 종목 매수가 기반 현실적 fallback 매핑
     """
@@ -111,6 +111,46 @@ def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame
             price_map[ticker] = float(item.get("buy_price", 0.0))
 
     return price_map
+
+
+# Streamlit 5분 TTL 캐시 적용 (yfinance HTTP 429 방어 및 페이지 리런 최적화)
+try:
+    import streamlit as st
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def _cached_get_live_price_map(items_payload: tuple[tuple[str, str, str, float], ...]) -> dict[str, float]:
+        reconstructed = [
+            {"ticker": t, "name": n, "market": m, "buy_price": bp}
+            for t, n, m, bp in items_payload
+        ]
+        return _fetch_live_price_map_raw(reconstructed)
+
+    def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame]] = None) -> dict[str, float]:
+        """
+        포트폴리오 종목 리스트의 티커를 기준으로 실시간 현재가 맵을 생성합니다. (5분 TTL 캐시 적용)
+        1. 인메모리 Npay 캐시 DataFrame에서 우선 탐색
+        2. 미발견 종목은 yfinance 조회 또는 종목 매수가 기반 현실적 fallback 매핑
+        """
+        if not items:
+            return {}
+        if cached_dfs:
+            return _fetch_live_price_map_raw(items, cached_dfs)
+        try:
+            items_payload = tuple(
+                (
+                    str(it.get("ticker", "")).strip().upper(),
+                    str(it.get("name", "")).strip(),
+                    str(it.get("market", "")).strip().upper(),
+                    float(it.get("buy_price", 0.0) or 0.0),
+                )
+                for it in items
+            )
+            return _cached_get_live_price_map(items_payload)
+        except Exception:
+            return _fetch_live_price_map_raw(items, cached_dfs)
+except Exception:
+    def get_live_price_map(items: list[dict], cached_dfs: Optional[list[pd.DataFrame]] = None) -> dict[str, float]:
+        return _fetch_live_price_map_raw(items, cached_dfs)
 
 
 def format_quantity(qty: float) -> str:

@@ -100,15 +100,15 @@ def _fetch_indices_raw() -> dict[str, dict[str, Any]]:
     return results
 
 
-# Streamlit 15분 TTL 캐시 적용
+# Streamlit 5분 TTL 캐시 적용 (yfinance 429 방어)
 try:
     import streamlit as st
-    @st.cache_data(ttl=900, show_spinner=False)
+    @st.cache_data(ttl=300, show_spinner=False)
     def _cached_fetch_market_indices() -> dict[str, dict[str, Any]]:
         return _fetch_indices_raw()
 
     def fetch_market_indices() -> dict[str, dict[str, Any]]:
-        """15분 캐시가 적용된 지수 수집 함수 (모든 6개 지수 완전성 검증 보장)"""
+        """5분 캐시가 적용된 지수 및 환율 수집 함수 (모든 6개 지수 완전성 검증 보장)"""
         try:
             cached = _cached_fetch_market_indices()
             # 캐시 데이터가 불완전하거나 코스피가 누락된 경우 즉시 mock으로 보충

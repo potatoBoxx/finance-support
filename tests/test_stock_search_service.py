@@ -38,3 +38,14 @@ def test_search_stock_not_found():
     res = search_stock_by_ticker_or_name("NON_EXISTENT_XYZ_12345", market="KRX")
     assert res is None
 
+
+def test_search_stock_by_alphanumeric_krx_ticker():
+    res = search_stock_by_ticker_or_name("0155M0", market="KRX")
+    assert res is not None
+    assert res["ticker"] == "0155M0"
+    assert "SMR" in res["name"]
+    assert "Nuclear" not in res["name"]  # 영문 야후 파이낸스명이 아닌 네이버 증권 한글명 확인
+    assert res["market"] == "KRX"
+    assert res["current_price"] > 0
+
+

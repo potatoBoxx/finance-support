@@ -34,6 +34,7 @@ class PortfolioRepository:
         self._fallback_items: dict[str, list[dict]] = {}
         self._fallback_accounts: dict[str, list[dict]] = {}
         self._fallback_briefings: dict[str, dict[str, dict]] = {}
+        self._fallback_disclosures: dict[str, list[dict]] = {}
         self._init_demo_data()
 
     def _init_demo_data(self):
@@ -381,6 +382,8 @@ class PortfolioRepository:
             update_fields["account"] = str(item_data["account"]).strip() or "기본"
         if "account_id" in item_data:
             update_fields["account_id"] = item_data.get("account_id")
+        if "name" in item_data and str(item_data["name"]).strip():
+            update_fields["name"] = str(item_data["name"]).strip()
 
         if self.client is not None:
             try:
@@ -701,4 +704,116 @@ class PortfolioRepository:
                 return True
 
         return True
+
+    # --------------------------------------------------------------------------
+    # 보유 종목 뉴스 및 주요 공시 관리 (Supabase + 세션/인메모리 폴백)
+    # --------------------------------------------------------------------------
+    def _get_mock_disclosure_store(self) -> dict[str, list[dict]]:
+        """Streamlit session_state가 존재하면 이를 활용하고, 없으면 내부 딕셔너리를 반환합니다."""
+        try:
+            import streamlit as st
+            if "mock_db_disclosures" not in st.session_state:
+                st.session_state.mock_db_disclosures = dict(self._fallback_disclosures)
+            return st.session_state.mock_db_disclosures
+        except Exception:
+            return self._fallback_disclosures
+
+    def get_disclosures(self, user_id: str, limit: int = 20) -> list[dict]:
+        """
+        해당 유저의 최신 공시/기사 목록을 최신순(published_at DESC)으로 조회하여 반환합니다.
+        """
+        if not user_id:
+            return []
+
+        clean_user = str(user_id).strip()
+
+        if self.client is not None:
+            try:
+                res = (
+                    self.client.table("portfolio_disclosures")
+                    .select("*")
+                    .eq("user_id", clean_user)
+                    .order("published_at", desc=True)
+                    .limit(limit)
+                    .execute()
+                )
+                if res.data is not None:
+                    return res.data
+            except Exception as e:
+                logger.warning(f"Supabase get_disclosures error: {e}. Falling back to mock store.")
+
+        mock_disclosures = self._get_mock_disclosure_store()
+        user_records = mock_disclosures.get(clean_user, [])
+        sorted_records = sorted(
+            user_records,
+            key=lambda x: str(x.get("published_at") or x.get("created_at") or ""),
+            reverse=True,
+        )
+        return sorted_records[:limit]
+
+    def save_disclosures(self, user_id: str, items: list[dict]) -> tuple[int, str]:
+        """
+        수집된 공시/기사 목록을 저장합니다. (동일 user_id, origin_url에 대해 upsert)
+        반환값: (저장 건수, 결과 메시지)
+        """
+        if not user_id or not items:
+            return 0, "저장할 데이터가 없습니다."
+
+        clean_user = str(user_id).strip()
+
+        now_iso = datetime.now().isoformat()
+        records = []
+        for it in items:
+            origin_url = str(it.get("origin_url") or "").strip()
+            if not origin_url:
+                continue
+            rec = {
+                "user_id": clean_user,
+                "ticker": str(it.get("ticker") or "").strip().upper(),
+                "item_name": str(it.get("item_name") or "").strip(),
+                "title": str(it.get("title") or "").strip(),
+                "source": str(it.get("source") or "").strip() or "뉴스/공시",
+                "origin_url": origin_url,
+                "published_at": it.get("published_at"),
+                "category": str(it.get("category") or "시장이슈").strip(),
+                "content_scraped": it.get("content_scraped"),
+                "summary_ai": it.get("summary_ai"),
+                "created_at": it.get("created_at") or now_iso,
+            }
+            records.append(rec)
+
+        if not records:
+            return 0, "유효한 공시/뉴스 레코드가 없습니다."
+
+        # 로컬/세션 캐시 항상 upsert 동기화
+        mock_disclosures = self._get_mock_disclosure_store()
+        if clean_user not in mock_disclosures:
+            mock_disclosures[clean_user] = []
+
+        existing_urls = {r["origin_url"]: idx for idx, r in enumerate(mock_disclosures[clean_user])}
+        for rec in records:
+            url = rec["origin_url"]
+            if url in existing_urls:
+                mock_disclosures[clean_user][existing_urls[url]].update(rec)
+            else:
+                existing_urls[url] = len(mock_disclosures[clean_user])
+                mock_disclosures[clean_user].append(dict(rec))
+
+        saved_count = len(records)
+        if self.client is not None:
+            try:
+                res = (
+                    self.client.table("portfolio_disclosures")
+                    .upsert(records, on_conflict="user_id,origin_url")
+                    .execute()
+                )
+                if res.data:
+                    saved_count = len(res.data)
+                return saved_count, f"{saved_count}건의 공시/뉴스가 성공적으로 저장되었습니다."
+            except Exception as e:
+                logger.warning(f"Supabase save_disclosures error: {e}. Preserved in local/session cache.")
+                return saved_count, f"DB 저장 중 예외 발생, 로컬 세션에 {saved_count}건 보존되었습니다: {e}"
+
+        return saved_count, f"{saved_count}건의 공시/뉴스가 로컬 세션에 보존되었습니다."
+
 

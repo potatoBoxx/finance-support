@@ -2668,6 +2668,74 @@ div[data-baseweb="popover"] li[role="option"] * {
     font-weight: 700;
 }
 
+/* --------------------------------------------------------------------------
+   보유 종목 뉴스 및 주요 공시 카드 스타일
+   -------------------------------------------------------------------------- */
+.disclosure-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.35rem;
+    backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+}
+
+.disclosure-card:hover {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(59, 130, 246, 0.35);
+    transform: translateY(-1px);
+}
+
+.disclosure-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 0.35rem;
+}
+
+.disclosure-badge-stock {
+    background: rgba(2, 132, 199, 0.15);
+    color: #38BDF8;
+    border: 1px solid rgba(2, 132, 199, 0.3);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.disclosure-badge-cat {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.disclosure-title-link {
+    color: #F8FAFC !important;
+    font-size: 0.93rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    line-height: 1.45;
+    word-break: keep-all;
+    transition: color 0.15s ease;
+}
+
+.disclosure-title-link:hover {
+    color: #60A5FA !important;
+    text-decoration: underline !important;
+}
+
+.disclosure-meta {
+    font-size: 0.76rem;
+    color: #94A3B8;
+    margin-left: 2px;
+}
+
+
 
 
 

@@ -192,9 +192,9 @@ def _search_us_yfinance(ticker: str) -> Optional[dict[str, Any]]:
     return None
 
 
-def search_stock_by_ticker_or_name(query: str, market: str = "KRX") -> Optional[dict[str, Any]]:
+def _search_stock_by_ticker_or_name_raw(query: str, market: str = "KRX") -> Optional[dict[str, Any]]:
     """
-    종목코드(티커) 또는 종목명을 입력받아 종목명과 현재가(장종료 시 종가)를 자동으로 조회합니다.
+    종목코드(티커) 또는 종목명을 입력받아 종목명과 현재가(장종료 시 종가)를 직접 조회하는 내부 함수.
     1. 인기 대표 종목 사전 매칭 + 실시간/종가 시세 갱신
     2. Npay API 캐시 데이터프레임 매칭
     3. 실시간 온라인 API (네이버 증권 또는 yfinance) 조회
@@ -275,8 +275,8 @@ def search_stock_by_ticker_or_name(query: str, market: str = "KRX") -> Optional[
 
     # 3. 실시간 API 직접 조회
     if market == "KRX":
-        # 6자리 숫자 코드인 경우 네이버 API 시도
-        if len(clean_q) == 6 and clean_q.isdigit():
+        # 6자리 종목코드인 경우 네이버 API 우선 시도 (숫자 6자리 및 0155M0/0072R0 등 영숫자 혼합 ETF 모두 지원)
+        if len(clean_q) == 6 and clean_q.isalnum():
             res = _search_krx_naver_api(clean_q)
             if res:
                 return res
@@ -305,4 +305,34 @@ def search_stock_by_ticker_or_name(query: str, market: str = "KRX") -> Optional[
             return res
 
     return None
+
+
+# Streamlit 5분 TTL 캐시 적용 (yfinance HTTP 429 방어 및 중복 조회 방지)
+try:
+    import streamlit as st
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def _cached_search_stock(clean_query: str, market: str) -> Optional[dict[str, Any]]:
+        return _search_stock_by_ticker_or_name_raw(clean_query, market)
+
+    def search_stock_by_ticker_or_name(query: str, market: str = "KRX") -> Optional[dict[str, Any]]:
+        """
+        종목코드(티커) 또는 종목명을 입력받아 종목명과 현재가(장종료 시 종가)를 자동으로 조회합니다. (5분 TTL 캐시 적용)
+        1. 인기 대표 종목 사전 매칭 + 실시간/종가 시세 갱신
+        2. Npay API 캐시 데이터프레임 매칭
+        3. 실시간 온라인 API (네이버 증권 또는 yfinance) 조회
+        """
+        if not query:
+            return None
+        clean_q = query.strip()
+        try:
+            return _cached_search_stock(clean_q, market)
+        except Exception:
+            return _search_stock_by_ticker_or_name_raw(clean_q, market)
+except Exception:
+    def search_stock_by_ticker_or_name(query: str, market: str = "KRX") -> Optional[dict[str, Any]]:
+        if not query:
+            return None
+        return _search_stock_by_ticker_or_name_raw(query.strip(), market)
+
 

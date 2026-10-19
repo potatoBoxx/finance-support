@@ -8,9 +8,8 @@
 - 보유 종목 최신 뉴스/공시 헤드라인 타임라인
 """
 from pathlib import Path
-from datetime import date
+from datetime import date, datetime
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import re
 
@@ -32,6 +31,10 @@ from services.portfolio_service import (
 )
 from services.market_service import fetch_market_indices
 from services.news_service import fetch_stock_news
+from services.news_disclosure_service import (
+    fetch_and_store_disclosures,
+    get_latest_disclosures,
+)
 from services.stock_search_service import search_stock_by_ticker_or_name
 
 
@@ -85,6 +88,13 @@ def inject_custom_css():
 inject_custom_css()
 
 # 레포지토리 인스턴스 생성
+import importlib
+import db.portfolio_repo
+
+if not hasattr(PortfolioRepository, "get_disclosures"):
+    importlib.reload(db.portfolio_repo)
+    from db.portfolio_repo import PortfolioRepository
+
 repo = PortfolioRepository()
 
 
@@ -194,12 +204,12 @@ if st.session_state.get("pending_toast"):
 
 if st.session_state.get("scroll_to_top"):
     st.session_state.scroll_to_top = False
-    components.html("""
+    scroll_js = """
         <script>
             (function() {
                 try {
-                    const parentDoc = window.parent.document;
-                    const topTarget = parentDoc.getElementById('portfolio-top');
+                    const parentDoc = (typeof window !== 'undefined' && window.parent) ? window.parent.document : document;
+                    const topTarget = parentDoc.getElementById('portfolio-top') || document.getElementById('portfolio-top');
                     if (topTarget) {
                         topTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
@@ -207,13 +217,21 @@ if st.session_state.get("scroll_to_top"):
                     if (mainContainer) {
                         mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
                     }
-                    window.parent.scrollTo({ top: 0, behavior: 'smooth' });
+                    if (typeof window !== 'undefined' && window.parent) {
+                        window.parent.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else if (typeof window !== 'undefined') {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
                 } catch(e) {
                     console.log('Scroll to top executed', e);
                 }
             })();
         </script>
-    """, height=0, width=0)
+    """
+    try:
+        st.html(f"<div style='display:none;'>{scroll_js}</div>", unsafe_allow_javascript=True)
+    except Exception:
+        st.markdown(f"<div style='display:none;'>{scroll_js}</div>", unsafe_allow_html=True)
 
 with st.container(key="portfolio_user_header_container"):
     top_col1, top_col2 = st.columns([3.5, 0.9], vertical_alignment="center")
@@ -394,9 +412,9 @@ def inject_enter_landscape_script():
     </script>
     """
     try:
-        components.html(js_code, height=0, width=0)
+        st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     except Exception:
-        pass
+        st.markdown(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_html=True)
 
 
 def inject_exit_landscape_script():
@@ -426,9 +444,9 @@ def inject_exit_landscape_script():
     </script>
     """
     try:
-        components.html(js_code, height=0, width=0)
+        st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     except Exception:
-        pass
+        st.markdown(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_html=True)
 
 
 def render_landscape_editor_view(items, repo, user_id, price_map, usd_rate):
@@ -650,12 +668,10 @@ def inject_mobile_landscape_table_script():
 })();
 """
     js_code = f"<script>{js_raw}</script>"
-    st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     try:
-        import streamlit.components.v1 as components
-        components.html(js_code, height=0, width=0)
+        st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     except Exception:
-        pass
+        st.markdown(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_html=True)
 
 if st.session_state.get("editor_landscape_mode", False):
     render_landscape_editor_view(items, repo, user_id, price_map, usd_rate)
@@ -952,12 +968,10 @@ def inject_tab_lock_and_loading_script():
     })();
     </script>
     """
-    st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     try:
-        import streamlit.components.v1 as components
-        components.html(js_code, height=0, width=0)
+        st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     except Exception:
-        pass
+        st.markdown(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_html=True)
 
 
 def inject_number_input_enhancer_script():
@@ -1103,12 +1117,10 @@ def inject_number_input_enhancer_script():
     })();
     </script>
     """
-    st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     try:
-        import streamlit.components.v1 as components
-        components.html(js_code, height=0, width=0)
+        st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     except Exception:
-        pass
+        st.markdown(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_html=True)
 
 
 def inject_currency_input_script():
@@ -1373,12 +1385,85 @@ def inject_currency_input_script():
 })();
 """
     js_code = f"<script>{js_raw}</script>"
-    st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     try:
-        import streamlit.components.v1 as components
-        components.html(js_code, height=0, width=0)
+        st.html(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_javascript=True)
     except Exception:
-        pass
+        st.markdown(f"<div style='display:none;'>{js_code}</div>", unsafe_allow_html=True)
+
+
+def inject_ticker_copy_script():
+    """종목코드 클릭 시 원클릭 클립보드 복사 스크립트 실행 (시장 브리핑 눈여겨볼종목 동일)"""
+    script_html = """
+    <script>
+    (function() {
+        try {
+            function setupListener(targetDoc) {
+                if (!targetDoc || targetDoc._tickerCopyListenerAdded) return;
+                targetDoc._tickerCopyListenerAdded = true;
+
+                targetDoc.addEventListener('click', function(e) {
+                    try {
+                        var badge = e.target.closest ? e.target.closest('.ticker-badge') : null;
+                        if (!badge) return;
+                        var ticker = badge.getAttribute('data-ticker') || badge.innerText.replace('📋', '').trim();
+                        if (!ticker) return;
+
+                        var done = function() {
+                            var orig = badge.innerHTML;
+                            badge.innerHTML = '✅ 복사됨!';
+                            badge.style.borderColor = '#10b981';
+                            badge.style.color = '#10b981';
+                            setTimeout(function() {
+                                badge.innerHTML = orig;
+                                badge.style.borderColor = '';
+                                badge.style.color = '';
+                            }, 1200);
+                        };
+
+                        var nav = (typeof window !== 'undefined' && window.parent && window.parent.navigator) || navigator;
+                        var cbObj = (nav && nav.clipboard) || (typeof navigator !== 'undefined' && navigator.clipboard);
+                        if (cbObj && cbObj.writeText) {
+                            navigator.clipboard.writeText(ticker).then(done).catch(function() {
+                                fallback(ticker, done, targetDoc);
+                            });
+                        } else {
+                            fallback(ticker, done, targetDoc);
+                        }
+
+                        function fallback(text, cb, d) {
+                            try {
+                                var ta = d.createElement('textarea');
+                                ta.value = text;
+                                ta.style.position = 'fixed';
+                                ta.style.opacity = '0';
+                                var container = d.body || d.documentElement;
+                                if (container) {
+                                    container.appendChild(ta);
+                                    ta.select();
+                                    d.execCommand('copy');
+                                    container.removeChild(ta);
+                                }
+                                cb();
+                            } catch(err) {
+                                console.error('Copy failed:', err);
+                            }
+                        }
+                    } catch(err) {}
+                });
+            }
+
+            if (typeof document !== 'undefined') setupListener(document);
+            if (typeof window !== 'undefined' && window.parent && window.parent.document && window.parent.document !== document) {
+                setupListener(window.parent.document);
+            }
+        } catch(err) {}
+    })();
+    </script>
+    """
+    try:
+        st.html(f"<div style='display:none;'>{script_html}</div>", unsafe_allow_javascript=True)
+    except Exception:
+        st.markdown(f"<div style='display:none;'>{script_html}</div>", unsafe_allow_html=True)
 
 
 def _format_currency_cb(widget_key: str, market: str):
@@ -1673,6 +1758,12 @@ with tab_recom:
             else:
                 criteria_html = ''
 
+            ticker_str = str(r.get("ticker", "")).strip()
+            ticker_badge_html = (
+                f'<span class="ticker-badge" data-ticker="{ticker_str}" style="cursor: pointer; user-select: all;">📋 {ticker_str}</span>'
+                if ticker_str else ""
+            )
+
             row_html = (
                 f'<tr class="recom-row">'
                 f'<td class="td-stock">'
@@ -1680,7 +1771,7 @@ with tab_recom:
                 f'<span class="market-account-chip">{r["market"]} · {r.get("account", "기본")}</span>'
                 f'<b style="font-size: 1rem; color: #F8FAFC; word-break: keep-all;">{r["name"]}</b>'
                 f'</div>'
-                f'<div style="font-size: 0.8rem; color: #94A3B8; margin-top: 3px;">{r["ticker"]}</div>'
+                f'<div style="margin-top: 5px;">{ticker_badge_html}</div>'
                 f'</td>'
                 f'<td class="td-price">'
                 f'<div class="price-container">'
@@ -1747,6 +1838,7 @@ with tab_recom:
             f'</table>'
             f'</div>'
         )
+        inject_ticker_copy_script()
         st.markdown(table_html, unsafe_allow_html=True)
 
 
@@ -2198,6 +2290,8 @@ with st.expander(
                 p_won_sign = "+" if profit_won_val > 0 else ("-" if profit_won_val < 0 else "")
                 cur_profit_fmt = f"{p_sign}${p_chg:,.2f} <span style=\"font-size: 0.8rem; color: #94A3B8;\">(약 {p_won_sign}{abs(profit_won_val):,.0f}원)</span>"
 
+            t_ticker = str(target_row.get("ticker", "")).strip()
+            t_badge_html = f'<span class="ticker-badge" data-ticker="{t_ticker}" style="cursor: pointer; user-select: all; font-size: 0.78rem !important; padding: 0.16rem 0.45rem !important; margin-left: 4px;">📋 {t_ticker}</span>' if t_ticker else ''
             badge_sl = '<span class="badge-stop-loss" style="margin-left: 8px;">🚨 손절 경고</span>' if target_row['is_stop_loss'] else ''
             st.markdown(
                 f'<div class="selected-stock-summary-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.85rem 1.1rem; margin-top: 0.5rem; margin-bottom: 1rem;">'
@@ -2205,7 +2299,7 @@ with st.expander(
                 f'<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">'
                 f'<span class="market-account-chip">{target_row["market"]} · {curr_account}</span>'
                 f'<b class="selected-stock-name" style="color: #F8FAFC; word-break: keep-all;">{target_row["name"]}</b>'
-                f'<span style="color: #94A3B8; font-size: 0.85rem; margin-left: 4px;">({target_row["ticker"]})</span>'
+                f'{t_badge_html}'
                 f'{badge_sl}'
                 f'</div>'
                 f'<div style="text-align: right;">'
@@ -2270,6 +2364,31 @@ with st.expander(
                         new_m_account = edit_acc_choice
                         new_m_account_id = None
 
+                def _sync_official_name_cb(s_id: str, t_sym: str, m_val: str):
+                    found_sync = search_stock_by_ticker_or_name(t_sym, market=m_val)
+                    if found_sync and found_sync.get("name"):
+                        st.session_state[f"m_name_{s_id}"] = found_sync["name"]
+                        st.session_state["pending_toast"] = (f"✅ 네이버 증권 공식명({found_sync['name']})을 불러왔습니다. 저장 버튼을 눌러 확정하세요.", "🔄")
+
+                if f"m_name_{sel_stock_id}" not in st.session_state:
+                    st.session_state[f"m_name_{sel_stock_id}"] = str(target_row["name"])
+
+                m_name_c1, m_name_c2 = st.columns([3.8, 1.2], vertical_alignment="bottom")
+                with m_name_c1:
+                    new_m_name = st.text_input(
+                        "종목명*",
+                        key=f"m_name_{sel_stock_id}"
+                    )
+                with m_name_c2:
+                    st.button(
+                        "🔄 공식명 조회",
+                        key=f"m_btn_sync_name_{sel_stock_id}",
+                        use_container_width=True,
+                        help="네이버 증권 API를 통해 현재 티커의 공식 한글 종목명을 자동으로 조회하여 채웁니다.",
+                        on_click=_sync_official_name_cb,
+                        args=(sel_stock_id, str(target_row.get("ticker", "")), curr_market)
+                    )
+
                 if curr_market == "KRX":
                     p_step = 1000
                     p_format = "%d"
@@ -2332,6 +2451,8 @@ with st.expander(
                     if st.button("💾 이 종목 수정사항 저장", type="primary", use_container_width=True, key=f"m_save_btn_{sel_stock_id}"):
                         if new_m_buy <= 0 or new_m_qty <= 0:
                             st.error("매수가와 보유 수량은 0보다 커야 합니다.")
+                        elif not new_m_name.strip():
+                            st.error("종목명을 입력해주세요.")
                         else:
                             clean_save_memo = new_m_memo.strip() if new_m_memo else ""
                             if not clean_save_memo or clean_save_memo in ("None", "nan", "NaN", "null"):
@@ -2340,6 +2461,7 @@ with st.expander(
                                 final_save_memo = clean_save_memo
 
                             up_dict = {
+                                "name": new_m_name.strip(),
                                 "account": new_m_account.strip() or "기본",
                                 "account_id": new_m_account_id,
                                 "buy_price": float(new_m_buy),
@@ -2350,7 +2472,7 @@ with st.expander(
                             }
                             ok, msg = repo.update_item(sel_stock_id, up_dict)
                             if ok:
-                                st.session_state.pending_toast = (f"💾 [{target_row['name']}] 보유 정보가 수정되었습니다.", "✨")
+                                st.session_state.pending_toast = (f"💾 [{new_m_name.strip()}] 보유 정보가 수정되었습니다.", "✨")
                                 st.session_state.scroll_to_top = True
                                 st.rerun()
                             else:
@@ -2542,32 +2664,127 @@ with st.expander(
 
 
 # ------------------------------------------------------------------------------
-# 10. 보유 종목 관련 최신 뉴스/공시 헤드라인
+# 10. 보유 종목 최신 뉴스 및 주요 공시 (DB 기반 수집 & 확장 아키텍처)
 # ------------------------------------------------------------------------------
 st.markdown("---")
-st.markdown('<h4 style="word-break: keep-all; letter-spacing: -0.5px; margin-bottom: 0.5rem;">📰 보유 종목 최신 뉴스 및 DART 주요 공시 헤드라인</h4>', unsafe_allow_html=True)
 
-holding_tickers = [str(r["ticker"]).strip() for _, r in perf_df.iterrows()] if not perf_df.empty else []
-news_items = fetch_stock_news(holding_tickers)
+stored_disclosures = get_latest_disclosures(user_id, limit=30, repo=repo)
 
-if not news_items:
-    st.caption("관련 뉴스가 없습니다.")
+# 마지막 수집/조회 시각 계산 (세션 저장값 또는 DB 최신 레코드)
+last_sync_str = st.session_state.get("last_disclosure_collected_at")
+if not last_sync_str and stored_disclosures:
+    first_dt = stored_disclosures[0].get("created_at") or stored_disclosures[0].get("published_at")
+    if first_dt:
+        try:
+            dt_val = datetime.fromisoformat(str(first_dt).replace("Z", "+00:00"))
+            last_sync_str = dt_val.strftime("%m-%d %H:%M")
+        except Exception:
+            last_sync_str = str(first_dt)[:16]
+
+col_news_head, col_news_act = st.columns([3.2, 1.8], vertical_alignment="center")
+with col_news_head:
+    st.markdown('<h4 style="word-break: keep-all; letter-spacing: -0.5px; margin: 0;">📰 보유 종목 최신 뉴스 및 주요 공시</h4>', unsafe_allow_html=True)
+    st.caption("보유 ETF의 분배금 발표, 운용 보고 공시 및 핵심 시장 동향을 모아봅니다.")
+
+with col_news_act:
+    act_c1, act_c2 = st.columns([1.5, 1.3], vertical_alignment="center") if last_sync_str else (st.container(), None)
+    target_btn_box = act_c1 if last_sync_str else act_c1
+
+    with target_btn_box:
+        if st.button("🔄 최신 소식 수집하기", key="btn_collect_disclosures", use_container_width=True, type="secondary"):
+            if not items:
+                st.warning("수집 대상 보유 종목이 없습니다. 먼저 종목을 등록해주세요.")
+            else:
+                with st.spinner("보유 ETF의 최신 분배금 공시 및 뉴스를 DB로 수집하고 있습니다..."):
+                    fetch_res = fetch_and_store_disclosures(user_id, items, repo=repo)
+                    now_str = datetime.now().strftime("%m-%d %H:%M")
+                    st.session_state["last_disclosure_collected_at"] = now_str
+                st.toast("✅ 최신 소식 수집 완료!", icon="📰")
+                st.rerun()
+
+    if last_sync_str and act_c2:
+        with act_c2:
+            st.markdown(
+                f'<div style="text-align: right; font-size: 0.75rem; color: #94A3B8; line-height: 1.2;">'
+                f'마지막 수집<br><b style="color: #E2E8F0;">{last_sync_str}</b>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+
+# 뉴스/공시 카드 리스트
+if not stored_disclosures:
+    st.markdown(
+        """
+        <div style="background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(148, 163, 184, 0.25); border-radius: 10px; padding: 1.8rem; text-align: center; margin-top: 0.8rem;">
+            <div style="font-size: 1.6rem; margin-bottom: 0.5rem;">📥</div>
+            <div style="font-weight: 600; font-size: 0.95rem; color: #F1F5F9; margin-bottom: 0.3rem;">수집된 최신 뉴스 및 공시가 없습니다.</div>
+            <div style="font-size: 0.82rem; color: #94A3B8;">우측 상단의 <b>[🔄 최신 소식 수집하기]</b> 버튼을 누르면 보유 중인 ETF의 최신 분배금과 운용 공시를 즉시 불러옵니다.</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 else:
-    for n in news_items:
+    # 카테고리 뱃지 스타일 매핑 ([배당/분배] 초록, [운용공시] 파랑, [시장이슈] 회색)
+    category_badges = {
+        "배당/분배": (
+            "background: rgba(16, 185, 129, 0.15); color: #34D399; "
+            "border: 1px solid rgba(16, 185, 129, 0.35);"
+        ),
+        "운용공시": (
+            "background: rgba(59, 130, 246, 0.15); color: #60A5FA; "
+            "border: 1px solid rgba(59, 130, 246, 0.35);"
+        ),
+        "시장이슈": (
+            "background: rgba(148, 163, 184, 0.15); color: #94A3B8; "
+            "border: 1px solid rgba(148, 163, 184, 0.35);"
+        ),
+    }
+
+    for idx, disc in enumerate(stored_disclosures):
+        cat = disc.get("category") or "시장이슈"
+        badge_style = category_badges.get(cat, category_badges["시장이슈"])
+        item_label = disc.get("item_name") or disc.get("ticker") or "종목"
+        title = disc.get("title", "")
+        origin_url = disc.get("origin_url", "#")
+        source = disc.get("source") or "뉴스/공시"
+
+        raw_pub = disc.get("published_at") or disc.get("created_at")
+        pub_display = ""
+        if raw_pub:
+            try:
+                dt_obj = datetime.fromisoformat(str(raw_pub).replace("Z", "+00:00"))
+                pub_display = dt_obj.strftime("%m-%d %H:%M")
+            except Exception:
+                pub_display = str(raw_pub)[:16]
+
         st.markdown(
-            f'<div class="portfolio-news-item">'
-            f'<div class="portfolio-news-main">'
-            f'<span class="badge-tag">{n.get("ticker", "시장")}</span>'
-            f'<a href="{n.get("link", "#")}" target="_blank" class="portfolio-news-link">'
-            f'{n.get("title")}'
-            f'</a>'
+            f'<div class="disclosure-card portfolio-news-item">'
+            f'<div class="disclosure-header portfolio-news-main">'
+            f'<span class="disclosure-badge-stock">[{item_label}]</span> '
+            f'<span class="disclosure-badge-cat" style="{badge_style}">[{cat}]</span> '
+            f'<a href="{origin_url}" target="_blank" class="disclosure-title-link portfolio-news-link">{title}</a>'
             f'</div>'
-            f'<div class="portfolio-news-meta">'
-            f'{n.get("publisher")} · {n.get("time")}'
+            f'<div class="disclosure-meta portfolio-news-meta">'
+            f'{source} · {pub_display}'
             f'</div>'
             f'</div>',
             unsafe_allow_html=True
         )
+
+        content_scraped = disc.get("content_scraped")
+        summary_ai = disc.get("summary_ai")
+
+        with st.expander("🤖 AI 분석 및 상세 요약 (확장 슬롯)", expanded=False):
+            if summary_ai:
+                st.markdown(f"**💡 AI 핵심 요약:**\n{summary_ai}")
+            if content_scraped:
+                st.markdown(f"**📄 본문 발췌:**\n{content_scraped}")
+            if not summary_ai and not content_scraped:
+                st.caption(
+                    "💡 기사 본문 추가 스크랩 및 AI 요약 확장 모듈 준비 슬롯입니다. "
+                    f"상단의 원문 링크(<a href='{origin_url}' target='_blank'>새 탭 열기</a>)에서 전체 기사를 확인하실 수 있습니다."
+                )
+
 
 # ------------------------------------------------------------------------------
 # 전역 클라이언트 상호작용 강화 스크립트 주입 (문서 최하단 배치로 상단 레이아웃 여백 무결성 보장)
@@ -2576,6 +2793,7 @@ with st.container(key="global_script_injector_container"):
     inject_tab_lock_and_loading_script()
     inject_number_input_enhancer_script()
     inject_currency_input_script()
+    inject_ticker_copy_script()
     inject_mobile_landscape_table_script()
 
 

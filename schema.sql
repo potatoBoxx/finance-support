@@ -95,3 +95,29 @@ DROP POLICY IF EXISTS "Allow all operations for authenticated or service role" O
 CREATE POLICY "Allow all operations for authenticated or service role" ON user_briefings
     FOR ALL USING (true) WITH CHECK (true);
 
+-- 9. 보유 종목 뉴스 및 주요 공시 수집 테이블 (portfolio_disclosures)
+CREATE TABLE IF NOT EXISTS portfolio_disclosures (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ticker VARCHAR(20) NOT NULL,
+    item_name VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    source VARCHAR(50),
+    origin_url TEXT NOT NULL,
+    published_at TIMESTAMPTZ,
+    category VARCHAR(30) NOT NULL DEFAULT '시장이슈',
+    content_scraped TEXT,
+    summary_ai TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, origin_url)
+);
+
+CREATE INDEX IF NOT EXISTS idx_disclosures_user_published ON portfolio_disclosures(user_id, published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_disclosures_user_ticker ON portfolio_disclosures(user_id, ticker);
+ALTER TABLE portfolio_disclosures ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all operations for authenticated or service role" ON portfolio_disclosures;
+CREATE POLICY "Allow all operations for authenticated or service role" ON portfolio_disclosures
+    FOR ALL USING (true) WITH CHECK (true);
+
+

@@ -343,12 +343,11 @@ def inject_ticker_copy_script():
     })();
     </script>
     """
-    st.html(f"<div style='display:none;'>{script_html}</div>", unsafe_allow_javascript=True)
     try:
-        import streamlit.components.v1 as components
-        components.html(script_html, height=0, width=0)
+        st.html(f"<div style='display:none;'>{script_html}</div>", unsafe_allow_javascript=True)
     except Exception:
-        pass
+        st.markdown(f"<div style='display:none;'>{script_html}</div>", unsafe_allow_html=True)
+
 
 
 def render_top3_cards(df: pd.DataFrame, currency_symbol: str = "원"):
