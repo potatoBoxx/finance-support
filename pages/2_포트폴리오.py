@@ -35,6 +35,10 @@ from services.news_disclosure_service import (
     fetch_and_store_disclosures,
     get_latest_disclosures,
 )
+from services.scrap_service import (
+    save_scrap,
+    get_scraped_urls,
+)
 from services.stock_search_service import search_stock_by_ticker_or_name
 
 
@@ -361,6 +365,52 @@ def manage_accounts_dialog(user_id: str, repo: PortfolioRepository):
                                 st.rerun()
                             else:
                                 st.error(del_msg)
+
+
+# ------------------------------------------------------------------------------
+# 5-2. 기사 스크랩 모달 다이얼로그 (@st.dialog)
+# ------------------------------------------------------------------------------
+@st.dialog("📌 기사 스크랩", width="medium")
+def scrap_article_dialog(
+    user_id: str,
+    ticker: str,
+    item_name: str,
+    title: str,
+    origin_url: str,
+    source: str,
+    repo: PortfolioRepository
+):
+    st.markdown(f"**📰 [{item_name or ticker}]**")
+    st.markdown(f"<div style='font-size: 0.95rem; font-weight: 600; color: #F1F5F9; line-height: 1.45; margin-bottom: 6px;'>{title}</div>", unsafe_allow_html=True)
+    st.caption(f"출처: {source or '뉴스/공시'} · [원문 보기]({origin_url})")
+
+    memo_val = st.text_area(
+        "투자 메모 (선택사항)",
+        placeholder="예: 4월 분배금 주당 35원 확정. 분할매수 고려.",
+        key=f"dlg_scrap_memo_{abs(hash(origin_url)) % 1000000}",
+        height=110
+    )
+
+    dlg_c1, dlg_c2 = st.columns(2)
+    with dlg_c1:
+        if st.button("취소", use_container_width=True, key=f"dlg_cancel_{abs(hash(origin_url)) % 1000000}"):
+            st.rerun()
+    with dlg_c2:
+        if st.button("저장", type="primary", use_container_width=True, key=f"dlg_save_{abs(hash(origin_url)) % 1000000}"):
+            ok, msg, _ = repo.save_scrap(
+                user_id=user_id,
+                ticker=ticker,
+                item_name=item_name,
+                title=title,
+                origin_url=origin_url,
+                source=source,
+                memo=memo_val
+            )
+            if ok:
+                st.session_state.pending_toast = ("✅ 스크랩북에 저장되었습니다!", "⭐")
+                st.rerun()
+            else:
+                st.error(msg)
 
 
 # ------------------------------------------------------------------------------
@@ -2724,6 +2774,9 @@ if not stored_disclosures:
         unsafe_allow_html=True
     )
 else:
+    # 이미 스크랩한 기사들의 origin_url 조회
+    scraped_urls = get_scraped_urls(user_id, repo=repo)
+
     # 카테고리 뱃지 스타일 매핑 ([배당/분배] 초록, [운용공시] 파랑, [시장이슈] 회색)
     category_badges = {
         "배당/분배": (
@@ -2747,6 +2800,7 @@ else:
         title = disc.get("title", "")
         origin_url = disc.get("origin_url", "#")
         source = disc.get("source") or "뉴스/공시"
+        ticker_val = disc.get("ticker", "")
 
         raw_pub = disc.get("published_at") or disc.get("created_at")
         pub_display = ""
@@ -2757,19 +2811,36 @@ else:
             except Exception:
                 pub_display = str(raw_pub)[:16]
 
-        st.markdown(
-            f'<div class="disclosure-card portfolio-news-item">'
-            f'<div class="disclosure-header portfolio-news-main">'
-            f'<span class="disclosure-badge-stock">[{item_label}]</span> '
-            f'<span class="disclosure-badge-cat" style="{badge_style}">[{cat}]</span> '
-            f'<a href="{origin_url}" target="_blank" class="disclosure-title-link portfolio-news-link">{title}</a>'
-            f'</div>'
-            f'<div class="disclosure-meta portfolio-news-meta">'
-            f'{source} · {pub_display}'
-            f'</div>'
-            f'</div>',
-            unsafe_allow_html=True
-        )
+        col_card_main, col_card_action = st.columns([4.2, 1.0], vertical_alignment="center")
+        with col_card_main:
+            st.markdown(
+                f'<div class="disclosure-card portfolio-news-item">'
+                f'<div class="disclosure-header portfolio-news-main">'
+                f'<span class="disclosure-badge-stock">[{item_label}]</span> '
+                f'<span class="disclosure-badge-cat" style="{badge_style}">[{cat}]</span> '
+                f'<a href="{origin_url}" target="_blank" class="disclosure-title-link portfolio-news-link">{title}</a>'
+                f'</div>'
+                f'<div class="disclosure-meta portfolio-news-meta">'
+                f'{source} · {pub_display}'
+                f'</div>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        with col_card_action:
+            if origin_url in scraped_urls:
+                if st.button("★ 저장됨", key=f"btn_scrapped_{idx}", use_container_width=True, help="이미 나의 스크랩북에 저장된 기사입니다."):
+                    st.toast("📌 이미 나의 스크랩북에 보관된 기사입니다.", icon="ℹ️")
+            else:
+                if st.button("⭐ 스크랩", key=f"btn_scrap_{idx}", use_container_width=True, type="secondary", help="나의 투자 스크랩북에 저장"):
+                    scrap_article_dialog(
+                        user_id=user_id,
+                        ticker=ticker_val,
+                        item_name=item_label,
+                        title=title,
+                        origin_url=origin_url,
+                        source=source,
+                        repo=repo
+                    )
 
         content_scraped = disc.get("content_scraped")
         summary_ai = disc.get("summary_ai")

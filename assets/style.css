@@ -2735,6 +2735,91 @@ div[data-baseweb="popover"] li[role="option"] * {
     margin-left: 2px;
 }
 
+/* --------------------------------------------------------------------------
+   투자자 개인 기사/공시 스크랩북 스타일
+   -------------------------------------------------------------------------- */
+.scrap-card {
+    background: rgba(30, 41, 59, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 0.85rem;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.scrap-card:hover {
+    border-color: rgba(59, 130, 246, 0.35);
+    transform: translateY(-2px);
+}
+
+.scrap-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.scrap-badge-stock {
+    background: rgba(2, 132, 199, 0.2);
+    color: #38BDF8;
+    border: 1px solid rgba(2, 132, 199, 0.35);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.scrap-meta-info {
+    font-size: 0.76rem;
+    color: #94A3B8;
+}
+
+.scrap-title-link {
+    color: #F8FAFC !important;
+    font-size: 1.02rem;
+    font-weight: 700;
+    text-decoration: none !important;
+    line-height: 1.45;
+    word-break: keep-all;
+    display: inline-block;
+    margin-bottom: 0.6rem;
+    transition: color 0.15s ease;
+}
+
+.scrap-title-link:hover {
+    color: #60A5FA !important;
+    text-decoration: underline !important;
+}
+
+.scrap-memo-box {
+    background: rgba(15, 23, 42, 0.6);
+    border-left: 3px solid #38BDF8;
+    border-radius: 0 8px 8px 0;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.88rem;
+    color: #E2E8F0;
+    line-height: 1.5;
+    word-break: keep-all;
+    margin-bottom: 0.6rem;
+}
+
+.scrap-memo-box.empty {
+    border-left-color: #64748B;
+    color: #94A3B8;
+    font-style: italic;
+}
+
+.scrap-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+
 
 
 

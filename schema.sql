@@ -3,10 +3,8 @@
 -- ==============================================================================
 -- 사용 방법: Supabase 대시보드 > [SQL Editor] > [New query]에 아래 내용을 붙여넣고 [Run] 실행
 -- ==============================================================================
-
 -- 1. UUID 생성을 위한 pgcrypto 확장 활성화
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
 -- 2. 사용자 테이블 (users)
 -- ID와 4자리 PIN의 SHA-256 해시값을 저장하여 경량 인증 지원
 CREATE TABLE IF NOT EXISTS users (
@@ -16,7 +14,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- 3. 계좌 관리 테이블 (accounts)
 CREATE TABLE IF NOT EXISTS accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -29,54 +26,46 @@ CREATE TABLE IF NOT EXISTS accounts (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- 4. 포트폴리오 보유 종목 테이블 (portfolio_items)
 CREATE TABLE IF NOT EXISTS portfolio_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    account_id UUID REFERENCES accounts(id) ON DELETE SET NULL,
-    market VARCHAR(10) NOT NULL CHECK (market IN ('KRX', 'US')),
-    ticker VARCHAR(20) NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    buy_price NUMERIC(14, 2) NOT NULL CHECK (buy_price > 0),
-    quantity NUMERIC(14, 4) NOT NULL CHECK (quantity > 0),
-    target_price NUMERIC(14, 2),
-    stop_loss_price NUMERIC(14, 2),
-    memo TEXT,
-    account VARCHAR(30) NOT NULL DEFAULT '기본',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    account_id UUID REFERENCES accounts(id) ON DELETE
+    SET NULL,
+        market VARCHAR(10) NOT NULL CHECK (market IN ('KRX', 'US')),
+        ticker VARCHAR(20) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        buy_price NUMERIC(14, 2) NOT NULL CHECK (buy_price > 0),
+        quantity NUMERIC(14, 4) NOT NULL CHECK (quantity > 0),
+        target_price NUMERIC(14, 2),
+        stop_loss_price NUMERIC(14, 2),
+        memo TEXT,
+        account VARCHAR(30) NOT NULL DEFAULT '기본',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- 하위 호환성 및 기존 테이블 마이그레이션용 컬럼 추가 구문
-ALTER TABLE portfolio_items ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES accounts(id) ON DELETE SET NULL;
-
+ALTER TABLE portfolio_items
+ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES accounts(id) ON DELETE
+SET NULL;
 -- 5. 인덱스 생성 (조회 성능 최적화 및 유저당 종목/계좌별 복합 인덱스)
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_portfolio_user_id ON portfolio_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_portfolio_account_id ON portfolio_items(account_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_ticker_account ON portfolio_items(user_id, ticker, account);
-
 -- 6. Row Level Security (RLS) 활성화
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE portfolio_items ENABLE ROW LEVEL SECURITY;
-
 -- 7. 기본 RLS 접근 정책 (Streamlit 백엔드 연결 허용)
 -- Streamlit 애플리케이션은 서버사이드 환경 변수로 보호되는 API Key를 사용합니다.
 DROP POLICY IF EXISTS "Allow all operations for authenticated or service role" ON users;
-CREATE POLICY "Allow all operations for authenticated or service role" ON users
-    FOR ALL USING (true) WITH CHECK (true);
-
+CREATE POLICY "Allow all operations for authenticated or service role" ON users FOR ALL USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow all operations for authenticated or service role" ON accounts;
-CREATE POLICY "Allow all operations for authenticated or service role" ON accounts
-    FOR ALL USING (true) WITH CHECK (true);
-
+CREATE POLICY "Allow all operations for authenticated or service role" ON accounts FOR ALL USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow all operations for authenticated or service role" ON portfolio_items;
-CREATE POLICY "Allow all operations for authenticated or service role" ON portfolio_items
-    FOR ALL USING (true) WITH CHECK (true);
-
+CREATE POLICY "Allow all operations for authenticated or service role" ON portfolio_items FOR ALL USING (true) WITH CHECK (true);
 -- 8. 일일 포트폴리오 AI 진단 브리핑 캐시 테이블 (user_briefings)
 CREATE TABLE IF NOT EXISTS user_briefings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -87,14 +76,10 @@ CREATE TABLE IF NOT EXISTS user_briefings (
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, briefing_date)
 );
-
 CREATE INDEX IF NOT EXISTS idx_user_briefings_lookup ON user_briefings(user_id, briefing_date);
 ALTER TABLE user_briefings ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Allow all operations for authenticated or service role" ON user_briefings;
-CREATE POLICY "Allow all operations for authenticated or service role" ON user_briefings
-    FOR ALL USING (true) WITH CHECK (true);
-
+CREATE POLICY "Allow all operations for authenticated or service role" ON user_briefings FOR ALL USING (true) WITH CHECK (true);
 -- 9. 보유 종목 뉴스 및 주요 공시 수집 테이블 (portfolio_disclosures)
 CREATE TABLE IF NOT EXISTS portfolio_disclosures (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -111,13 +96,34 @@ CREATE TABLE IF NOT EXISTS portfolio_disclosures (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, origin_url)
 );
-
 CREATE INDEX IF NOT EXISTS idx_disclosures_user_published ON portfolio_disclosures(user_id, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_disclosures_user_ticker ON portfolio_disclosures(user_id, ticker);
 ALTER TABLE portfolio_disclosures ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Allow all operations for authenticated or service role" ON portfolio_disclosures;
-CREATE POLICY "Allow all operations for authenticated or service role" ON portfolio_disclosures
-    FOR ALL USING (true) WITH CHECK (true);
-
-
+CREATE POLICY "Allow all operations for authenticated or service role" ON portfolio_disclosures FOR ALL USING (true) WITH CHECK (true);
+-- 10. 투자자 개인 기사/공시 스크랩북 테이블 (scraped_articles)
+CREATE TABLE IF NOT EXISTS scraped_articles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ticker VARCHAR(20),
+    -- 종목 코드 (종목별 필터링용)
+    item_name VARCHAR(100),
+    -- 종목명 (예: TIGER 미국배당다우존스)
+    title TEXT NOT NULL,
+    -- 기사/공시 제목
+    origin_url TEXT NOT NULL,
+    -- 원문 링크
+    source VARCHAR(50),
+    -- 언론사/출처 (선택)
+    memo TEXT,
+    -- 사용자의 투자 메모/코멘트
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    -- 스크랩 일시
+    UNIQUE(user_id, origin_url) -- 동일 기사 중복 스크랩 방지
+);
+-- 사용자별 스크랩 일시 최신순 조회 인덱스
+CREATE INDEX IF NOT EXISTS idx_scraped_articles_user_time ON scraped_articles(user_id, created_at DESC);
+-- RLS 정책 설정
+ALTER TABLE scraped_articles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all for authenticated users on scraped_articles" ON scraped_articles;
+CREATE POLICY "Allow all for authenticated users on scraped_articles" ON scraped_articles FOR ALL USING (true) WITH CHECK (true);

@@ -27,8 +27,27 @@ def test_ensure_session_state_sets_defaults(monkeypatch):
 def test_pages_files_exist():
     assert os.path.exists("pages/1_시장_브리핑.py")
     assert os.path.exists("pages/2_포트폴리오.py")
+    assert os.path.exists("pages/3_📰_스크랩북.py")
     assert os.path.exists("app.py")
     assert os.path.exists("assets/style.css")
+
+
+def test_scrapbook_ui_elements():
+    assert os.path.exists("pages/3_📰_스크랩북.py")
+    with open("pages/3_📰_스크랩북.py", "r", encoding="utf-8") as f:
+        code = f.read()
+    assert "나의 투자 스크랩북" in code
+    assert "scrap_stock_filter_sel" in code
+    assert "edit_scrap_memo_dialog" in code
+    assert "confirm_delete_scrap_dialog" in code
+    assert "get_scraps" in code
+
+    with open("assets/style.css", "r", encoding="utf-8") as f:
+        css = f.read()
+    assert ".scrap-card" in css
+    assert ".scrap-badge-stock" in css
+    assert ".scrap-memo-box" in css
+    assert ".scrap-actions" in css
 
 
 def test_ai_comment_styles_exist():

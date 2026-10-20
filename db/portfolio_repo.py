@@ -35,6 +35,7 @@ class PortfolioRepository:
         self._fallback_accounts: dict[str, list[dict]] = {}
         self._fallback_briefings: dict[str, dict[str, dict]] = {}
         self._fallback_disclosures: dict[str, list[dict]] = {}
+        self._fallback_scraps: dict[str, list[dict]] = {}
         self._init_demo_data()
 
     def _init_demo_data(self):
@@ -815,5 +816,230 @@ class PortfolioRepository:
                 return saved_count, f"DB 저장 중 예외 발생, 로컬 세션에 {saved_count}건 보존되었습니다: {e}"
 
         return saved_count, f"{saved_count}건의 공시/뉴스가 로컬 세션에 보존되었습니다."
+
+    # --------------------------------------------------------------------------
+    # 개인 기사/공시 스크랩북 관리 (Supabase + 세션/인메모리 폴백)
+    # --------------------------------------------------------------------------
+    def _get_mock_scrap_store(self) -> dict[str, list[dict]]:
+        """Streamlit session_state가 존재하면 이를 활용하고, 없으면 내부 딕셔너리를 반환합니다."""
+        try:
+            import streamlit as st
+            if "mock_db_scraps" not in st.session_state:
+                st.session_state.mock_db_scraps = dict(self._fallback_scraps)
+            return st.session_state.mock_db_scraps
+        except Exception:
+            return self._fallback_scraps
+
+    def save_scrap(
+        self,
+        user_id: str,
+        ticker: str,
+        item_name: str,
+        title: str,
+        origin_url: str,
+        source: str = "",
+        memo: str = ""
+    ) -> tuple[bool, str, Optional[dict]]:
+        """
+        기사를 스크랩북에 추가하거나 메모를 갱신합니다 (Upsert).
+        UNIQUE(user_id, origin_url) 기준.
+        """
+        if not user_id or not origin_url or not title:
+            return False, "필수 정보(사용자 ID, 원문 링크, 제목)가 누락되었습니다.", None
+
+        clean_user = str(user_id).strip()
+        clean_url = str(origin_url).strip()
+        clean_title = str(title).strip()
+        clean_ticker = str(ticker or "").strip()
+        clean_item = str(item_name or "").strip()
+        clean_source = str(source or "").strip()
+        clean_memo = str(memo or "").strip()
+        now_iso = datetime.now().isoformat()
+
+        scrap_record = {
+            "id": str(uuid.uuid4()),
+            "user_id": clean_user,
+            "ticker": clean_ticker or None,
+            "item_name": clean_item or None,
+            "title": clean_title,
+            "origin_url": clean_url,
+            "source": clean_source or None,
+            "memo": clean_memo or None,
+            "created_at": now_iso,
+        }
+
+        # Mock store 동기화
+        mock_scraps = self._get_mock_scrap_store()
+        if clean_user not in mock_scraps:
+            mock_scraps[clean_user] = []
+
+        existing_idx = next((i for i, r in enumerate(mock_scraps[clean_user]) if r.get("origin_url") == clean_url), None)
+        if existing_idx is not None:
+            scrap_record["id"] = mock_scraps[clean_user][existing_idx].get("id", scrap_record["id"])
+            mock_scraps[clean_user][existing_idx].update({
+                "ticker": clean_ticker or None,
+                "item_name": clean_item or None,
+                "title": clean_title,
+                "source": clean_source or None,
+                "memo": clean_memo or None,
+            })
+            saved_item = mock_scraps[clean_user][existing_idx]
+        else:
+            mock_scraps[clean_user].insert(0, dict(scrap_record))
+            saved_item = scrap_record
+
+        if self.client is not None:
+            try:
+                payload = {
+                    "user_id": clean_user,
+                    "ticker": clean_ticker or None,
+                    "item_name": clean_item or None,
+                    "title": clean_title,
+                    "origin_url": clean_url,
+                    "source": clean_source or None,
+                    "memo": clean_memo or None,
+                    "created_at": now_iso
+                }
+                res = self.client.table("scraped_articles").upsert(
+                    payload,
+                    on_conflict="user_id,origin_url"
+                ).execute()
+                if res.data and len(res.data) > 0:
+                    saved_item = res.data[0]
+                    if existing_idx is not None:
+                        mock_scraps[clean_user][existing_idx]["id"] = saved_item.get("id")
+                    else:
+                        mock_scraps[clean_user][0]["id"] = saved_item.get("id")
+                return True, "스크랩북에 성공적으로 저장되었습니다.", saved_item
+            except Exception as e:
+                logger.warning(f"Supabase save_scrap error: {e}. Preserved in local/session cache.")
+                return True, f"로컬 세션 스크랩북에 임시 저장되었습니다: {e}", saved_item
+
+        return True, "스크랩북에 저장되었습니다.", saved_item
+
+    def get_scraps(self, user_id: str, ticker_filter: str = "전체") -> list[dict]:
+        """
+        사용자의 스크랩 목록을 최신순(created_at DESC)으로 조회합니다.
+        ticker_filter가 지정된 경우 해당 종목(ticker 또는 item_name)으로 필터링합니다.
+        """
+        if not user_id:
+            return []
+
+        clean_user = str(user_id).strip()
+        filter_val = str(ticker_filter or "전체").strip()
+
+        if self.client is not None:
+            try:
+                query = (
+                    self.client.table("scraped_articles")
+                    .select("*")
+                    .eq("user_id", clean_user)
+                    .order("created_at", desc=True)
+                )
+                if filter_val and filter_val != "전체":
+                    query = query.or_(f"ticker.eq.{filter_val},item_name.eq.{filter_val}")
+                res = query.execute()
+                if res.data is not None:
+                    return res.data
+            except Exception as e:
+                logger.warning(f"Supabase get_scraps error: {e}. Falling back to mock store.")
+
+        mock_scraps = self._get_mock_scrap_store()
+        user_records = mock_scraps.get(clean_user, [])
+        if filter_val and filter_val != "전체":
+            filtered = [
+                r for r in user_records
+                if r.get("ticker") == filter_val or r.get("item_name") == filter_val
+            ]
+        else:
+            filtered = list(user_records)
+
+        sorted_scraps = sorted(
+            filtered,
+            key=lambda x: str(x.get("created_at") or ""),
+            reverse=True
+        )
+        return sorted_scraps
+
+    def update_scrap_memo(self, scrap_id: str, new_memo: str, user_id: Optional[str] = None) -> tuple[bool, str]:
+        """
+        스크랩 항목의 메모를 수정합니다.
+        """
+        if not scrap_id:
+            return False, "유효한 스크랩 ID가 필요합니다."
+
+        clean_id = str(scrap_id).strip()
+        clean_memo = str(new_memo or "").strip()
+
+        mock_scraps = self._get_mock_scrap_store()
+        for u_id, records in mock_scraps.items():
+            for r in records:
+                if str(r.get("id")) == clean_id:
+                    r["memo"] = clean_memo or None
+                    break
+
+        if self.client is not None:
+            try:
+                res = (
+                    self.client.table("scraped_articles")
+                    .update({"memo": clean_memo or None})
+                    .eq("id", clean_id)
+                    .execute()
+                )
+                return bool(res.data), "메모가 성공적으로 수정되었습니다."
+            except Exception as e:
+                logger.warning(f"Supabase update_scrap_memo error: {e}. Updated in local/session cache.")
+                return True, f"로컬 세션 메모가 수정되었습니다: {e}"
+
+        return True, "메모가 성공적으로 수정되었습니다."
+
+    def delete_scrap(self, scrap_id: str, user_id: Optional[str] = None) -> tuple[bool, str]:
+        """
+        스크랩 항목을 삭제합니다.
+        """
+        if not scrap_id:
+            return False, "유효한 스크랩 ID가 필요합니다."
+
+        clean_id = str(scrap_id).strip()
+
+        mock_scraps = self._get_mock_scrap_store()
+        for u_id, records in mock_scraps.items():
+            mock_scraps[u_id] = [r for r in records if str(r.get("id")) != clean_id]
+
+        if self.client is not None:
+            try:
+                self.client.table("scraped_articles").delete().eq("id", clean_id).execute()
+                return True, "스크랩이 성공적으로 삭제되었습니다."
+            except Exception as e:
+                logger.warning(f"Supabase delete_scrap error: {e}. Removed from local/session cache.")
+                return True, f"로컬 세션에서 삭제되었습니다: {e}"
+
+        return True, "스크랩이 삭제되었습니다."
+
+    def get_scraped_urls(self, user_id: str) -> set[str]:
+        """
+        해당 사용자가 이미 스크랩한 기사들의 origin_url 집합(Set)을 반환합니다.
+        """
+        if not user_id:
+            return set()
+
+        clean_user = str(user_id).strip()
+        if self.client is not None:
+            try:
+                res = (
+                    self.client.table("scraped_articles")
+                    .select("origin_url")
+                    .eq("user_id", clean_user)
+                    .execute()
+                )
+                if res.data:
+                    return {str(r.get("origin_url")).strip() for r in res.data if r.get("origin_url")}
+            except Exception as e:
+                logger.warning(f"Supabase get_scraped_urls error: {e}. Checking mock store.")
+
+        mock_scraps = self._get_mock_scrap_store()
+        user_records = mock_scraps.get(clean_user, [])
+        return {str(r.get("origin_url")).strip() for r in user_records if r.get("origin_url")}
+
 
 
