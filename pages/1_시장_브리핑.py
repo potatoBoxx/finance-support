@@ -50,9 +50,9 @@ with st.sidebar:
     st.markdown("""
         <div style="padding: 0.5rem 0 1rem 0;">
             <h2 style="margin: 0; font-size: 1.45rem; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">
-                📈 FinScope
+                🥔 알감자 (AI Potato)
             </h2>
-            <span style="font-size: 0.8rem; color: #94A3B8;">1. 시장 브리핑 및 발굴</span>
+            <span style="font-size: 0.8rem; color: #94A3B8;">작지만 알찬 나만의 스마트 자산 관리 대시보드</span>
         </div>
     """, unsafe_allow_html=True)
 

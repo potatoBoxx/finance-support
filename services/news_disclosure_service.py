@@ -376,6 +376,81 @@ def get_latest_disclosures(
     return repo.get_disclosures(user_id, limit=limit)
 
 
+def render_collection_criteria_content():
+    """
+    사용자가 한눈에 이해할 수 있는 최신 소식 수집 기준표 및 가이드 렌더링
+    (팝오버 / 말풍선 / 다이얼로그 공용)
+    """
+    import textwrap
+    import streamlit as st
+
+    html_content = textwrap.dedent("""
+        <div class="criteria-popover-container" style="width: 100%; margin: 0; padding: 0;">
+            <div style="margin-bottom: 3px;">
+                <div style="color: #F8FAFC; font-size: 0.88rem; font-weight: 700; line-height: 1.2; display: flex; align-items: center; gap: 4px;">
+                    📋 뉴스 및 주요 공시 수집 기준표
+                </div>
+                <div style="font-size: 0.68rem; color: #94A3B8; line-height: 1.2; margin-top: 2px; word-break: keep-all;">
+                    보유종목 관련 핵심 투자 정보 실시간 선별 후 제공
+                </div>
+            </div>
+            <div class="criteria-table-wrap" style="width: 100%; overflow-x: auto; margin: 3px 0;">
+                <table class="criteria-table" style="width: 100%; border-collapse: collapse; font-size: 0.67rem; line-height: 1.22; color: #E2E8F0; text-align: left;">
+                    <thead>
+                        <tr style="background: rgba(30, 41, 59, 0.95); border-bottom: 1px solid rgba(148, 163, 184, 0.25);">
+                            <th style="padding: 2.5px 4px; font-weight: 700; color: #F8FAFC; white-space: nowrap; width: 18%; font-size: 0.67rem;">시장</th>
+                            <th style="padding: 2.5px 4px; font-weight: 700; color: #F8FAFC; white-space: nowrap; width: 25%; font-size: 0.67rem;">수집 출처</th>
+                            <th style="padding: 2.5px 2px; font-weight: 700; color: #F8FAFC; white-space: nowrap; text-align: center; width: 17%; font-size: 0.67rem;">수집량</th>
+                            <th style="padding: 2.5px 4px; font-weight: 700; color: #F8FAFC; width: 40%; font-size: 0.67rem;">주요 내용</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.1);">
+                            <td rowspan="3" style="padding: 3px 4px; font-weight: 700; color: #38BDF8; vertical-align: middle; border-right: 1px solid rgba(148, 163, 184, 0.12); font-size: 0.67rem; line-height: 1.15;">국내<br><span style="font-size: 0.60rem; color: #94A3B8; font-weight: 400;">ETF·주식</span></td>
+                            <td style="padding: 2.5px 4px; font-weight: 600; font-size: 0.67rem;">KOSCOM 공시</td>
+                            <td style="padding: 2.5px 2px; text-align: center; white-space: nowrap; color: #CBD5E1; font-size: 0.65rem;">최대 4건</td>
+                            <td style="padding: 2.5px 4px; word-break: keep-all; font-size: 0.65rem; color: #CBD5E1;">운용보고서, 분배금 공시, 상장/합병</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.1);">
+                            <td style="padding: 2.5px 4px; font-weight: 600; font-size: 0.67rem;">네이버 뉴스</td>
+                            <td style="padding: 2.5px 2px; text-align: center; white-space: nowrap; color: #CBD5E1; font-size: 0.65rem;">최대 6건</td>
+                            <td style="padding: 2.5px 4px; word-break: keep-all; font-size: 0.65rem; color: #CBD5E1;">주요 경제지 실시간 종목 보도</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.18);">
+                            <td style="padding: 2.5px 4px; font-weight: 600; font-size: 0.67rem;">Google 피드</td>
+                            <td style="padding: 2.5px 2px; text-align: center; white-space: nowrap; color: #CBD5E1; font-size: 0.65rem;">최대 2건</td>
+                            <td style="padding: 2.5px 4px; word-break: keep-all; font-size: 0.65rem; color: #CBD5E1;">{종목명} 분배금 특화 키워드</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 3px 4px; font-weight: 700; color: #F59E0B; vertical-align: middle; border-right: 1px solid rgba(148, 163, 184, 0.12); font-size: 0.67rem; line-height: 1.15;">미국<br><span style="font-size: 0.60rem; color: #94A3B8; font-weight: 400;">주식·ETF</span></td>
+                            <td style="padding: 2.5px 4px; font-weight: 600; font-size: 0.67rem;">글로벌 피드</td>
+                            <td style="padding: 2.5px 2px; text-align: center; white-space: nowrap; color: #CBD5E1; font-size: 0.65rem;">최대 6건</td>
+                            <td style="padding: 2.5px 4px; word-break: keep-all; font-size: 0.65rem; color: #CBD5E1;">배당 발표 및 글로벌 외신 실시간 동향</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 5px; padding: 3px 5px; margin-top: 3px; font-size: 0.64rem; line-height: 1.3; color: #94A3B8; word-break: keep-all;">
+                <div style="margin-bottom: 2px;">
+                    <b style="color: #CBD5E1;">🏷️ 분류:</b>
+                    <span style="color: #34D399; font-weight: 600;">[배당/분배]</span> 분배금·월배당 &nbsp;·&nbsp;
+                    <span style="color: #60A5FA; font-weight: 600;">[운용공시]</span> 보고서·DART &nbsp;·&nbsp;
+                    <span style="color: #E2E8F0; font-weight: 600;">[시장이슈]</span> 실적·뉴스
+                </div>
+                <div>
+                    <b style="color: #CBD5E1;">⚙️ 관리:</b>
+                    중복 자동 차단 &nbsp;·&nbsp; 최신순 30건 정돈 &nbsp;·&nbsp; <b style="color: #F8FAFC;">[⭐ 스크랩]</b> 시 영구 보관
+                </div>
+            </div>
+        </div>
+    """).strip()
+
+    try:
+        st.html(html_content)
+    except Exception:
+        st.markdown(html_content, unsafe_allow_html=True)
+
+
 
 # ------------------------------------------------------------------------------
 # 독립 CLI 배치 실행 엔트리포인트 (GitHub Actions / 외부 크론 스케줄러 연동용)

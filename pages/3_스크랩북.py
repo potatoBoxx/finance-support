@@ -14,6 +14,7 @@ from services.scrap_service import (
     update_scrap_memo,
     delete_scrap,
 )
+from services.news_disclosure_service import render_collection_criteria_content
 
 # ------------------------------------------------------------------------------
 # 1. 멀티페이지 세션 상태 방어 코드 (Session Guard)
@@ -56,9 +57,9 @@ with st.sidebar:
     st.markdown("""
         <div style="padding: 0.5rem 0 1rem 0;">
             <h2 style="margin: 0; font-size: 1.45rem; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">
-                📈 FinScope
+                🥔 알감자 (AI Potato)
             </h2>
-            <span style="font-size: 0.8rem; color: #94A3B8;">3. 나의 투자 스크랩북</span>
+            <span style="font-size: 0.8rem; color: #94A3B8;">작지만 알찬 나만의 스마트 자산 관리 대시보드</span>
         </div>
     """, unsafe_allow_html=True)
 
@@ -76,11 +77,6 @@ with st.sidebar:
             st.session_state.authenticated = False
             st.session_state.user = None
             st.rerun()
-
-    st.markdown("---")
-    st.page_link("app.py", label="🏠 홈으로 이동", icon="🌐")
-    st.page_link("pages/1_시장_브리핑.py", label="📊 시장 브리핑", icon="📈")
-    st.page_link("pages/2_포트폴리오.py", label="💼 포트폴리오 관리", icon="💼")
 
 
 # ------------------------------------------------------------------------------
@@ -232,7 +228,7 @@ for s in all_scraps:
 
 filter_options = ["전체 종목 보기"] + sorted(list(item_names_set))
 
-filter_col1, filter_col2 = st.columns([3.2, 1.8], vertical_alignment="center")
+filter_col1, filter_col2, filter_col3 = st.columns([2.6, 1.1, 1.3], vertical_alignment="center")
 with filter_col1:
     selected_filter = st.selectbox(
         "종목별 필터",
@@ -243,12 +239,16 @@ with filter_col1:
     )
 
 with filter_col2:
+    with st.popover("ℹ️ 수집 기준", use_container_width=True, help="뉴스 및 공시 수집 기준표를 확인합니다."):
+        render_collection_criteria_content()
+
+with filter_col3:
     total_count = len(all_scraps)
     st.markdown(
         f"""
         <div style="text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
             <span style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.85rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
-                ⭐ 총 {total_count}건의 스크랩
+                ⭐ 총 {total_count}건
             </span>
         </div>
         """,

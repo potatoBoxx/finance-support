@@ -34,6 +34,7 @@ from services.news_service import fetch_stock_news
 from services.news_disclosure_service import (
     fetch_and_store_disclosures,
     get_latest_disclosures,
+    render_collection_criteria_content,
 )
 from services.scrap_service import (
     save_scrap,
@@ -75,6 +76,8 @@ if "pending_reg_stock" not in st.session_state:
     st.session_state.pending_reg_stock = None
 if "editor_landscape_mode" not in st.session_state:
     st.session_state.editor_landscape_mode = False
+if "portfolio_editor_expanded" not in st.session_state:
+    st.session_state.portfolio_editor_expanded = False
 if "portfolio_edit_expander" not in st.session_state:
     st.session_state.portfolio_edit_expander = False
 
@@ -109,9 +112,9 @@ with st.sidebar:
     st.markdown("""
         <div style="padding: 0.5rem 0 1rem 0;">
             <h2 style="margin: 0; font-size: 1.45rem; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">
-                📈 FinScope
+                🥔 알감자 (AI Potato)
             </h2>
-            <span style="font-size: 0.8rem; color: #94A3B8;">2. 개인 포트폴리오 관리</span>
+            <span style="font-size: 0.8rem; color: #94A3B8;">작지만 알찬 나만의 스마트 자산 관리 대시보드</span>
         </div>
     """, unsafe_allow_html=True)
 
@@ -2256,6 +2259,8 @@ def confirm_delete_stock_dialog(stock_id: str, stock_name: str, ticker: str, rep
         if st.button("삭제 확인", type="primary", use_container_width=True, key=f"dlg_confirm_del_{stock_id}"):
             d_ok, d_msg = repo.delete_item(stock_id)
             if d_ok:
+                st.session_state.portfolio_editor_expanded = True
+                st.session_state.portfolio_edit_expander = True
                 st.session_state.pending_toast = (f"🗑️ [{stock_name}] 종목이 삭제되었습니다.", "ℹ️")
                 st.session_state.scroll_to_top = True
                 st.rerun()
@@ -2269,9 +2274,8 @@ def confirm_delete_stock_dialog(stock_id: str, stock_name: str, ticker: str, rep
 # ------------------------------------------------------------------------------
 with st.expander(
     "⚙️ 포트폴리오 종목 편집 및 관리",
-    expanded=st.session_state.portfolio_edit_expander,
-    key="portfolio_edit_expander",
-    on_change="rerun"
+    expanded=st.session_state.get("portfolio_editor_expanded", False),
+    key="portfolio_editor_expander"
 ):
     st.caption("💡 보유 종목의 매수가, 수량, 목표가, 손절가를 직접 수정하거나 추가 매수·매도 거래를 시뮬레이션하여 반영할 수 있습니다.")
 
@@ -2298,6 +2302,7 @@ with st.expander(
                 stock_options[stock_label] = r["id"]
 
             def on_mobile_stock_change():
+                st.session_state.portfolio_editor_expanded = True
                 st.session_state.portfolio_edit_expander = True
 
             sel_label = st.selectbox(
@@ -2522,6 +2527,8 @@ with st.expander(
                             }
                             ok, msg = repo.update_item(sel_stock_id, up_dict)
                             if ok:
+                                st.session_state.portfolio_editor_expanded = True
+                                st.session_state.portfolio_edit_expander = True
                                 st.session_state.pending_toast = (f"💾 [{new_m_name.strip()}] 보유 정보가 수정되었습니다.", "✨")
                                 st.session_state.scroll_to_top = True
                                 st.rerun()
@@ -2606,6 +2613,8 @@ with st.expander(
                     }
                     ok, msg = repo.update_item(sel_stock_id, up_dict)
                     if ok:
+                        st.session_state.portfolio_editor_expanded = True
+                        st.session_state.portfolio_edit_expander = True
                         st.session_state.pending_toast = (f"💾 [{target_row['name']}] 보유 정보가 수정되었습니다.", "✨")
                         st.session_state.scroll_to_top = True
                         st.rerun()
@@ -2622,6 +2631,8 @@ with st.expander(
                     st.caption("💡 엑셀처럼 표에서 **계좌, 매수가, 수량, 목표가, 손절가, 메모**를 일괄 수정합니다.")
                 with norm_c2:
                     if st.button("📱 가로 넓게 보기", key="btn_enter_table_landscape", use_container_width=True, help="모바일 환경에서 표를 가로 전체화면으로 넓게 편집합니다."):
+                        st.session_state.portfolio_editor_expanded = True
+                        st.session_state.portfolio_edit_expander = True
                         st.session_state.editor_landscape_mode = True
                         inject_enter_landscape_script()
                         st.rerun()
@@ -2659,7 +2670,7 @@ with st.expander(
                 disabled=["시장", "종목명"],
                 use_container_width=True,
                 hide_index=True,
-                key="slim_portfolio_editor"
+                key="portfolio_data_editor"
             )
 
             if st.button("💾 테이블 변경사항 일괄 저장", type="primary", use_container_width=True, key="save_slim_editor_btn"):
@@ -2705,6 +2716,8 @@ with st.expander(
                             updated_count += 1
 
                 if updated_count > 0:
+                    st.session_state.portfolio_editor_expanded = True
+                    st.session_state.portfolio_edit_expander = True
                     st.session_state.pending_toast = (f"💾 {updated_count}건의 종목 정보가 수정되었습니다.", "✨")
                     st.session_state.scroll_to_top = True
                     st.rerun()
@@ -2731,17 +2744,20 @@ if not last_sync_str and stored_disclosures:
         except Exception:
             last_sync_str = str(first_dt)[:16]
 
-col_news_head, col_news_act = st.columns([3.2, 1.8], vertical_alignment="center")
+col_news_head, col_news_act = st.columns([2.9, 2.1], vertical_alignment="center")
 with col_news_head:
     st.markdown('<h4 style="word-break: keep-all; letter-spacing: -0.5px; margin: 0;">📰 보유 종목 최신 뉴스 및 주요 공시</h4>', unsafe_allow_html=True)
-    st.caption("보유 ETF의 분배금 발표, 운용 보고 공시 및 핵심 시장 동향을 모아봅니다.")
+    last_sync_caption = f" · 마지막 수집: {last_sync_str}" if last_sync_str else ""
+    st.caption(f"보유 ETF의 분배금 발표, 운용 보고 공시 및 핵심 시장 동향을 모아봅니다.{last_sync_caption}")
 
 with col_news_act:
-    act_c1, act_c2 = st.columns([1.5, 1.3], vertical_alignment="center") if last_sync_str else (st.container(), None)
-    target_btn_box = act_c1 if last_sync_str else act_c1
+    act_c1, act_c2 = st.columns([1.0, 1.4], vertical_alignment="center")
+    with act_c1:
+        with st.popover("ℹ️ 수집 기준", use_container_width=True, help="뉴스·공시 수집 기준표 및 자동 분류 원칙을 확인합니다."):
+            render_collection_criteria_content()
 
-    with target_btn_box:
-        if st.button("🔄 최신 소식 수집하기", key="btn_collect_disclosures", use_container_width=True, type="secondary"):
+    with act_c2:
+        if st.button("🔄 최신 소식 수집", key="btn_collect_disclosures", use_container_width=True, type="secondary"):
             if not items:
                 st.warning("수집 대상 보유 종목이 없습니다. 먼저 종목을 등록해주세요.")
             else:
@@ -2752,15 +2768,6 @@ with col_news_act:
                 st.toast("✅ 최신 소식 수집 완료!", icon="📰")
                 st.rerun()
 
-    if last_sync_str and act_c2:
-        with act_c2:
-            st.markdown(
-                f'<div style="text-align: right; font-size: 0.75rem; color: #94A3B8; line-height: 1.2;">'
-                f'마지막 수집<br><b style="color: #E2E8F0;">{last_sync_str}</b>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
-
 # 뉴스/공시 카드 리스트
 if not stored_disclosures:
     st.markdown(
@@ -2768,7 +2775,7 @@ if not stored_disclosures:
         <div style="background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(148, 163, 184, 0.25); border-radius: 10px; padding: 1.8rem; text-align: center; margin-top: 0.8rem;">
             <div style="font-size: 1.6rem; margin-bottom: 0.5rem;">📥</div>
             <div style="font-weight: 600; font-size: 0.95rem; color: #F1F5F9; margin-bottom: 0.3rem;">수집된 최신 뉴스 및 공시가 없습니다.</div>
-            <div style="font-size: 0.82rem; color: #94A3B8;">우측 상단의 <b>[🔄 최신 소식 수집하기]</b> 버튼을 누르면 보유 중인 ETF의 최신 분배금과 운용 공시를 즉시 불러옵니다.</div>
+            <div style="font-size: 0.82rem; color: #94A3B8;">우측 상단의 <b>[🔄 최신 소식 수집]</b> 버튼을 누르면 보유 중인 종목의 최신 분배금과 운용 공시를 즉시 불러옵니다. (자세한 채널 및 분류는 <b>[ℹ️ 수집 기준]</b> 말풍선을 눌러 확인하세요)</div>
         </div>
         """,
         unsafe_allow_html=True
@@ -2853,8 +2860,9 @@ else:
             if not summary_ai and not content_scraped:
                 st.caption(
                     "💡 기사 본문 추가 스크랩 및 AI 요약 확장 모듈 준비 슬롯입니다. "
-                    f"상단의 원문 링크(<a href='{origin_url}' target='_blank'>새 탭 열기</a>)에서 전체 기사를 확인하실 수 있습니다."
+                    f"상단의 원문 링크([새 탭 열기]({origin_url}))에서 전체 기사를 확인하실 수 있습니다."
                 )
+
 
 
 # ------------------------------------------------------------------------------

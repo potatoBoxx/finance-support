@@ -69,6 +69,26 @@ h1, h2, h3, h4, h5, h6, p, span, strong, b,
     transform: translateY(-2px);
 }
 
+.card-feature-list {
+    color: #94A3B8;
+    font-size: 0.88rem;
+    padding-inline-start: 14px !important;
+    padding-left: 14px !important;
+    margin-inline-start: 0 !important;
+    margin-left: 0 !important;
+    line-height: 1.65;
+    margin-top: 0.4rem;
+    margin-bottom: 0.6rem;
+    word-break: keep-all;
+}
+
+.card-feature-list li {
+    font-size: 0.84rem;
+    margin-bottom: 4px;
+    padding-left: 2px;
+    word-break: keep-all;
+}
+
 /* 3. 메트릭 카드 그리드 (반응형 플렉스/그리드) */
 .metric-container {
     display: grid;
@@ -1179,9 +1199,36 @@ button[key*="btn_copy_top3"]:hover {
         margin-top: 2px !important;
     }
 
-    .fin-card {
-        padding: 0.9rem;
+    /* 모바일 카드 컨테이너 내부 패딩 슬림화 (가로 가독 영역 확보) */
+    .fin-card,
+    [data-testid="stCard"],
+    .stCard {
+        padding: 0.75rem 0.7rem !important;
         word-break: keep-all;
+    }
+
+    .fin-card p {
+        font-size: 0.86rem !important;
+        line-height: 1.48 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* 모바일 불릿 리스트(ul, li) 들여쓰기 대폭 축소 (6px) 및 글자포인트 슬림화 (0.80rem) */
+    ul, ol, .fin-card ul, .card-feature-list, [data-testid="stMarkdownContainer"] ul {
+        padding-inline-start: 6px !important;
+        padding-left: 6px !important;
+        margin-inline-start: 0 !important;
+        margin-left: 0 !important;
+        margin-top: 0.2rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    li, .fin-card li, .card-feature-list li, [data-testid="stMarkdownContainer"] li {
+        font-size: 0.80rem !important;
+        line-height: 1.38 !important;
+        margin-bottom: 4px !important;
+        padding-left: 2px !important;
+        word-break: keep-all !important;
     }
 
     /* 모바일 헤딩 반응형 축소 및 단어 분리 방지 */
@@ -2270,29 +2317,29 @@ iframe[width="0"] {
     }
 
     .briefing-card {
-        padding: 10px 12px;
+        padding: 8px 10px;
         border-radius: 8px;
     }
 
     .briefing-header-row {
-        gap: 6px;
-        margin-bottom: 6px;
+        gap: 5px;
+        margin-bottom: 5px;
     }
 
     .briefing-title {
-        font-size: 0.9rem;
+        font-size: 0.88rem;
     }
 
     .briefing-desc {
-        font-size: 0.85rem;
-        line-height: 1.5;
-        margin-bottom: 8px;
+        font-size: 0.82rem;
+        line-height: 1.42;
+        margin-bottom: 6px;
     }
 
     .briefing-meta-strip {
-        font-size: 0.78rem;
-        padding: 6px 9px;
-        gap: 4px 8px;
+        font-size: 0.75rem;
+        padding: 5px 8px;
+        gap: 4px 6px;
     }
 
     .briefing-action-box {
@@ -2818,6 +2865,77 @@ div[data-baseweb="popover"] li[role="option"] * {
     gap: 8px;
     justify-content: flex-end;
 }
+
+/* ==========================================================================
+   뉴스·공시 수집 기준표 모바일 최적화 스타일
+   ========================================================================== */
+.criteria-popover-container {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.criteria-table-wrap {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: 3px 0 !important;
+}
+
+.criteria-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 0.67rem !important;
+    line-height: 1.22 !important;
+}
+
+.criteria-table th,
+.criteria-table td {
+    font-size: 0.67rem !important;
+    padding: 2.5px 4px !important;
+    word-break: keep-all !important;
+}
+
+div[data-testid="stPopoverBody"] {
+    max-width: 95vw !important;
+    padding: 8px 10px !important;
+}
+
+div[data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+div[data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] > p,
+div[data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] > div {
+    margin: 0 !important;
+}
+
+div[data-testid="stPopoverBody"] table {
+    font-size: 0.67rem !important;
+    line-height: 1.22 !important;
+}
+
+div[data-testid="stPopoverBody"] th,
+div[data-testid="stPopoverBody"] td {
+    font-size: 0.67rem !important;
+    padding: 2.5px 4px !important;
+}
+
+@media (max-width: 768px) {
+    .criteria-table {
+        font-size: 0.65rem !important;
+    }
+    .criteria-table th,
+    .criteria-table td {
+        font-size: 0.65rem !important;
+        padding: 2px 3px !important;
+    }
+    div[data-testid="stPopoverBody"] {
+        padding: 6px 8px !important;
+    }
+}
+
 
 
 

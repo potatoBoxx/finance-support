@@ -27,14 +27,14 @@ def test_ensure_session_state_sets_defaults(monkeypatch):
 def test_pages_files_exist():
     assert os.path.exists("pages/1_시장_브리핑.py")
     assert os.path.exists("pages/2_포트폴리오.py")
-    assert os.path.exists("pages/3_📰_스크랩북.py")
+    assert os.path.exists("pages/3_스크랩북.py")
     assert os.path.exists("app.py")
     assert os.path.exists("assets/style.css")
 
 
 def test_scrapbook_ui_elements():
-    assert os.path.exists("pages/3_📰_스크랩북.py")
-    with open("pages/3_📰_스크랩북.py", "r", encoding="utf-8") as f:
+    assert os.path.exists("pages/3_스크랩북.py")
+    with open("pages/3_스크랩북.py", "r", encoding="utf-8") as f:
         code = f.read()
     assert "나의 투자 스크랩북" in code
     assert "scrap_stock_filter_sel" in code
@@ -84,8 +84,17 @@ def test_landing_page_and_copy_ux():
     with open("app.py", "r", encoding="utf-8") as f:
         app_code = f.read()
     assert "@st.cache_data" not in app_code
+    assert "알감자" in app_code
+    assert "작지만 알찬 나만의 스마트 자산 관리 대시보드" in app_code
+    assert "st.navigation" in app_code
+    assert "홈 (알감자)" in app_code
     assert "오늘의 시장 브리핑 & 추천 종목" in app_code
     assert "스마트 포트폴리오 관리" in app_code
+    assert "DART/KIND ETF 공시 및 뉴스 수집 & 기사 스크랩북 연동" in app_code
+    assert "유망 종목 Top 3 발굴 및 원클릭 종목코드 복사" in app_code
+    assert "1초 기사 스크랩북" not in app_code
+    assert "퀀트 기반 유망 종목" not in app_code
+    assert "AI 포트폴리오 진단 및 모바일 와이드 에디터 지원" in app_code
     assert "초고속 인메모리 캐시" in app_code
     assert "Supabase 클라우드 영구 보존" in app_code
     assert "완벽한 모바일 반응형 뷰" in app_code
@@ -101,6 +110,12 @@ def test_landing_page_and_copy_ux():
     assert ".ticker-badge" in css
     assert "body.tab-switching" in css
     assert ".fin-tab-loading-toast" in css
+    assert ".card-feature-list" in css
+    assert "padding-inline-start: 6px !important;" in css
+    assert "padding-left: 6px !important;" in css
+    assert "font-size: 0.80rem !important;" in css
+    assert "line-height: 1.38 !important;" in css
+    assert "margin-bottom: 4px !important;" in css
 
     with open("pages/1_시장_브리핑.py", "r", encoding="utf-8") as f:
         briefing_code = f.read()
@@ -230,8 +245,8 @@ def test_confirm_delete_stock_dialog_ui():
 def test_mobile_portfolio_edit_form_and_font_optimization():
     with open("pages/2_포트폴리오.py", "r", encoding="utf-8") as f:
         port_code = f.read()
-    assert "portfolio_edit_expander" in port_code
-    assert 'on_change="rerun"' in port_code
+    assert "portfolio_editor_expanded" in port_code
+    assert "portfolio_data_editor" in port_code
     assert "on_mobile_stock_change" in port_code
     assert "selected-stock-name" in port_code
 
@@ -240,6 +255,34 @@ def test_mobile_portfolio_edit_form_and_font_optimization():
     assert ".st-key-mobile_target_stock" in css
     assert "selected-stock-name" in css
     assert "data-baseweb=\"popover\"" in css
+
+
+def test_collection_criteria_popover():
+    with open("pages/2_포트폴리오.py", "r", encoding="utf-8") as f:
+        port_code = f.read()
+    assert "render_collection_criteria_content" in port_code
+    assert "ℹ️ 수집 기준" in port_code
+    assert "st.popover" in port_code
+
+    with open("pages/3_스크랩북.py", "r", encoding="utf-8") as f:
+        scrap_code = f.read()
+    assert "render_collection_criteria_content" in scrap_code
+    assert "ℹ️ 수집 기준" in scrap_code
+    assert "st.popover" in scrap_code
+
+    from services.news_disclosure_service import render_collection_criteria_content
+    assert callable(render_collection_criteria_content)
+
+    with open("services/news_disclosure_service.py", "r", encoding="utf-8") as f:
+        srv_code = f.read()
+    assert "보유종목 관련 핵심 투자 정보 실시간 선별 후 제공" in srv_code
+    assert "criteria-table" in srv_code
+
+    with open("assets/style.css", "r", encoding="utf-8") as f:
+        css = f.read()
+    assert ".criteria-table" in css
+    assert ".criteria-table-wrap" in css
+
 
 
 

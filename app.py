@@ -1,13 +1,13 @@
 """
-FinScope - 개인 투자 분석 대시보드 메인 엔트리포인트 (app.py)
+🥔 알감자 (AI Potato) - 개인 투자비서 메인 엔트리포인트 (app.py)
 """
 from pathlib import Path
 import streamlit as st
 
 # 1. 페이지 기본 설정 (와이드 레이아웃)
 st.set_page_config(
-    page_title="FinScope - 개인 투자 분석 대시보드",
-    page_icon="📈",
+    page_title="🥔 알감자 - 개인 투자비서",
+    page_icon="🥔",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -48,9 +48,9 @@ def render_sidebar():
         st.markdown("""
             <div style="padding: 0.5rem 0 1rem 0;">
                 <h2 style="margin: 0; font-size: 1.45rem; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">
-                    📈 FinScope
+                    🥔 알감자 (AI Potato)
                 </h2>
-                <span style="font-size: 0.8rem; color: #94A3B8;">Financial Intelligence Dashboard</span>
+                <span style="font-size: 0.8rem; color: #94A3B8;">작지만 알찬 나만의 스마트 자산 관리 대시보드</span>
             </div>
         """, unsafe_allow_html=True)
 
@@ -73,71 +73,85 @@ def render_sidebar():
             st.caption("💡 [2_포트폴리오] 페이지에서 ID/PIN으로 로그인하거나 원클릭 데모 계정을 이용하실 수 있습니다.")
 
         st.markdown("---")
-        st.caption("v1.0.0 | GitHub & Streamlit Cloud 배포 최적화")
+        st.caption("v1.1.0 | 🥔 알감자 개인 투자비서")
 
 
-render_sidebar()
+# 5. 메인 홈 랜딩 뷰 렌더링 함수
+def render_home():
+    # 사이드바 렌더링
+    render_sidebar()
 
-# 5. 메인 홈 랜딩 뷰 렌더링
-st.markdown("""
-    <div style="margin-bottom: 1.5rem;">
-        <h1 class="page-hero-title" style="color: #F8FAFC; margin-bottom: 0.5rem; word-break: keep-all; letter-spacing: -0.5px;">
-            📈 FinScope 개인 투자 분석 대시보드
-        </h1>
-        <p style="font-size: 1.05rem; color: #94A3B8; margin: 0; line-height: 1.6; word-break: keep-all; letter-spacing: -0.3px;">
-            실시간 글로벌 시장 지표와 퀀트 유망 종목 발굴, 다중 계좌 맞춤형 포트폴리오 분석을 원스톱으로 지원하는 프리미엄 투자 대시보드입니다.
-        </p>
-    </div>
-""", unsafe_allow_html=True)
-
-# 2열 반응형 카드 네비게이션
-col1, col2 = st.columns(2, gap="large")
-
-with col1:
+    # 상단 히어로 헤더
     st.markdown("""
-        <div class="fin-card">
-            <h3 style="margin-top: 0; color: #60A5FA; display: flex; align-items: center; gap: 8px; word-break: keep-all;">
-                🌐 1. 오늘의 시장 브리핑 & 추천 종목
-            </h3>
-            <p style="color: #CBD5E1; font-size: 0.95rem; line-height: 1.6; word-break: keep-all;">
-                당일 글로벌 거시 지표와 시장 핵심 동향을 한눈에 파악하고, 퀀트 알고리즘으로 엄선한 유망 종목을 발굴합니다.
+        <div style="margin-bottom: 1.5rem;">
+            <h1 class="page-hero-title" style="color: #F8FAFC; margin-bottom: 0.5rem; word-break: keep-all; letter-spacing: -0.5px;">
+                🥔 알감자 (AI Potato) 개인 투자비서
+            </h1>
+            <p style="font-size: 1.05rem; color: #94A3B8; margin: 0; line-height: 1.6; word-break: keep-all; letter-spacing: -0.3px;">
+                작지만 알찬 나만의 스마트 자산 관리 대시보드
             </p>
-            <ul style="color: #94A3B8; font-size: 0.9rem; padding-left: 1.2rem; line-height: 1.8; word-break: keep-all;">
-                <li>6대 핵심 지표 및 장 개장/프리마켓 상태 실시간 안내</li>
-                <li>오늘의 핵심 3줄 브리핑 및 공포/탐욕 심리 진단</li>
-                <li>퀀트 기반 유망 종목 Top 3 발굴 및 원클릭 종목코드 복사</li>
-            </ul>
         </div>
     """, unsafe_allow_html=True)
-    st.page_link("pages/1_시장_브리핑.py", label="🌐 시장 브리핑 바로가기", icon="👉", use_container_width=True)
 
-with col2:
-    st.markdown("""
-        <div class="fin-card">
-            <h3 style="margin-top: 0; color: #34D399; display: flex; align-items: center; gap: 8px; word-break: keep-all;">
-                💼 2. 스마트 포트폴리오 관리
-            </h3>
-            <p style="color: #CBD5E1; font-size: 0.95rem; line-height: 1.6; word-break: keep-all;">
-                증권사별 다중 계좌 보유 종목을 안전하게 관리하고, 실시간 환율 반영 및 분할 매매 전략 가이드를 제공합니다.
-            </p>
-            <ul style="color: #94A3B8; font-size: 0.9rem; padding-left: 1.2rem; line-height: 1.8; word-break: keep-all;">
-                <li>토스/키움/한투 등 다중 계좌(증권사)별 분리 모니터링</li>
-                <li>미국 주식 실시간 환율 반영 원화 환산 동시 제공</li>
-                <li>단기 지지선(-4%) 및 저항선(+8%) 기반 분할 매매 기준가 제시</li>
-                <li>DART 공시/뉴스 연동 종목별 AI 진단 한줄평 제공</li>
-            </ul>
-        </div>
-    """, unsafe_allow_html=True)
-    st.page_link("pages/2_포트폴리오.py", label="💼 포트폴리오 관리 바로가기", icon="👉", use_container_width=True)
+    # 2열 반응형 카드 네비게이션
+    col1, col2 = st.columns(2, gap="large")
 
-st.markdown("---")
+    with col1:
+        st.markdown("""
+            <div class="fin-card">
+                <h3 style="margin-top: 0; color: #60A5FA; display: flex; align-items: center; gap: 8px; word-break: keep-all;">
+                    🌐 1. 오늘의 시장 브리핑 & 추천 종목
+                </h3>
+                <p style="color: #CBD5E1; font-size: 0.95rem; line-height: 1.6; word-break: keep-all;">
+                    당일 글로벌 거시 지표와 시장 핵심 동향을 한눈에 파악하고, 퀀트 알고리즘으로 엄선한 유망 종목을 발굴합니다.
+                </p>
+                <ul class="card-feature-list" style="padding-inline-start: 12px; padding-left: 12px; margin-left: 0;">
+                    <li>6대 핵심 지표 및 장 개장/프리마켓 상태 실시간 안내</li>
+                    <li>오늘의 핵심 3줄 브리핑 및 공포/탐욕 심리 진단</li>
+                    <li>유망 종목 Top 3 발굴 및 원클릭 종목코드 복사</li>
+                </ul>
+            </div>
+        """, unsafe_allow_html=True)
+        st.page_link("pages/1_시장_브리핑.py", label="시장 브리핑 바로가기", icon="🌐", use_container_width=True)
 
-# 서비스 핵심 특징 하이라이트
-st.markdown("#### ⚡ 서비스 핵심 특징")
-c1, c2, c3 = st.columns(3)
-with c1:
-    st.info("**🚀 초고속 인메모리 캐시**\n\n주요 시장 시세 및 퀀트 랭킹 데이터를 실시간 메모리 캐싱하여 딜레이 없는 초고속 로딩을 지원합니다.")
-with c2:
-    st.info("**☁️ Supabase 클라우드 영구 보존**\n\n안전한 클라우드 데이터베이스를 통해 재접속이나 기기 변경 시에도 보유 자산이 안전하게 보존됩니다.")
-with c3:
-    st.info("**📱 완벽한 모바일 반응형 뷰**\n\n스마트폰 화면에서도 가로 스크롤 없이 컴팩트한 카드 뷰와 터치 최적화 인터랙션을 제공합니다.")
+    with col2:
+        st.markdown("""
+            <div class="fin-card">
+                <h3 style="margin-top: 0; color: #34D399; display: flex; align-items: center; gap: 8px; word-break: keep-all;">
+                    💼 2. 스마트 포트폴리오 관리
+                </h3>
+                <p style="color: #CBD5E1; font-size: 0.95rem; line-height: 1.6; word-break: keep-all;">
+                    증권사별 다중 계좌 보유 종목을 안전하게 관리하고, 실시간 환율 반영 및 분할 매매 전략 가이드를 제공합니다.
+                </p>
+                <ul class="card-feature-list" style="padding-inline-start: 12px; padding-left: 12px; margin-left: 0;">
+                    <li>토스/키움/한투 등 다중 계좌(증권사)별 분리 모니터링</li>
+                    <li>미국 주식 실시간 환율 반영 원화 환산 동시 제공</li>
+                    <li>단기 지지선(-4%) 및 저항선(+8%) 기반 분할 매매 기준가 제시</li>
+                    <li>DART/KIND ETF 공시 및 뉴스 수집 & 기사 스크랩북 연동</li>
+                    <li>AI 포트폴리오 진단 및 모바일 와이드 에디터 지원</li>
+                </ul>
+            </div>
+        """, unsafe_allow_html=True)
+        st.page_link("pages/2_포트폴리오.py", label="포트폴리오 관리 바로가기", icon="💼", use_container_width=True)
+
+    st.markdown("---")
+
+    # 서비스 핵심 특징 하이라이트
+    st.markdown("#### ⚡ 서비스 핵심 특징")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.info("**🚀 초고속 인메모리 캐시**\n\n주요 시장 시세 및 퀀트 랭킹 데이터를 실시간 메모리 캐싱하여 딜레이 없는 초고속 로딩을 지원합니다.")
+    with c2:
+        st.info("**☁️ Supabase 클라우드 영구 보존**\n\n안전한 클라우드 데이터베이스를 통해 재접속이나 기기 변경 시에도 보유 자산이 안전하게 보존됩니다.")
+    with c3:
+        st.info("**📱 완벽한 모바일 반응형 뷰**\n\n스마트폰 화면에서도 가로 스크롤 없이 컴팩트한 카드 뷰와 터치 최적화 인터랙션을 제공합니다.")
+
+
+# 6. Streamlit v1.31+ st.navigation 기반 사이드바 메뉴 명칭 및 아이콘 체계 정돈
+home_page = st.Page(render_home, title="홈 (알감자)", icon="🏠", default=True)
+briefing_page = st.Page("pages/1_시장_브리핑.py", title="시장 브리핑", icon="🌐")
+portfolio_page = st.Page("pages/2_포트폴리오.py", title="포트폴리오", icon="💼")
+scrapbook_page = st.Page("pages/3_스크랩북.py", title="스크랩북", icon="📰")
+
+pg = st.navigation([home_page, briefing_page, portfolio_page, scrapbook_page])
+pg.run()
