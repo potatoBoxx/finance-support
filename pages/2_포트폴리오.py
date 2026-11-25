@@ -1239,7 +1239,8 @@ def inject_currency_input_script():
                              labelText.indexOf('거래 단가') !== -1 ||
                              labelText.indexOf('거래단가') !== -1 ||
                              labelText.indexOf('(원)') !== -1 ||
-                             labelText.indexOf('(USD)') !== -1);
+                             labelText.indexOf('(USD)') !== -1 ||
+                             labelText.indexOf('($)') !== -1);
                 if (!isCur) return;
 
                 input._finscopeCurLiveActive = true;
@@ -1249,9 +1250,9 @@ def inject_currency_input_script():
                     if (this._finscopeFormatting) return;
 
                     var val = this.value;
-                    var isWon = labelText.indexOf('원') !== -1 || labelText.indexOf('$') === -1;
+                    var isWon = labelText.indexOf('원') !== -1 || (labelText.indexOf('$') === -1 && labelText.indexOf('USD') === -1);
 
-                    // 커서 위치 및 커서 앞 유효 문자(비콤마) 개수 추적
+                    // 커서 위치 및 커서 앞 유효 문자(비콤마/비통화기호) 개수 추적
                     var cursorPos = this.selectionStart || 0;
                     var nonCommasBeforeCursor = 0;
                     for (var i = 0; i < cursorPos; i++) {
@@ -1290,11 +1291,11 @@ def inject_currency_input_script():
                     this.dispatchEvent(new Event('input', { bubbles: true }));
                     this._finscopeFormatting = false;
 
-                    // 비콤마 문자 개수 기준으로 커서 위치 복원
+                    // 유효 문자(비콤마/비통화기호) 개수 기준으로 커서 위치 복원
                     var newPos = 0;
                     var count = 0;
                     for (var j = 0; j < formatted.length; j++) {
-                        if (formatted[j] !== ',') count++;
+                        if (formatted[j] !== ',' && formatted[j] !== '원' && formatted[j] !== '$') count++;
                         if (count === nonCommasBeforeCursor) {
                             newPos = j + 1;
                             break;
@@ -1302,6 +1303,9 @@ def inject_currency_input_script():
                     }
                     if (count < nonCommasBeforeCursor) {
                         newPos = formatted.length;
+                    }
+                    if (nonCommasBeforeCursor === 0 && formatted.startsWith('$')) {
+                        newPos = 1;
                     }
                     try {
                         this.setSelectionRange(newPos, newPos);
@@ -1333,21 +1337,24 @@ def inject_currency_input_script():
                     }
                 });
 
-                // 3. 포커스 시: 0원이면 공란으로 클리어, 기존 값이면 '원' 접미사 제거 및 전체 선택
+                // 3. 포커스 시: 0원이면 공란으로 클리어, 기존 값이면 전체 선택
                 input.addEventListener('focus', function() {
                     var val = this.value.trim();
-                    if (val === '0원' || val === '0' || val === '$0' || val === '$0.00' || val === '0.0' || val === '0.00') {
+                    if (val === '0원' || val === '0' || val === '$0' || val === '$0.00' || val === '0.0' || val === '0.00' || val === '$0.0') {
                         this._finscopeFormatting = true;
                         setNativeValue(this, '');
                         this.dispatchEvent(new Event('input', { bubbles: true }));
                         this._finscopeFormatting = false;
                     } else {
-                        var stripped = val.replace(/원$/, '').replace(/^\\$/, '').trim();
-                        if (stripped !== val) {
-                            this._finscopeFormatting = true;
-                            setNativeValue(this, stripped);
-                            this.dispatchEvent(new Event('input', { bubbles: true }));
-                            this._finscopeFormatting = false;
+                        var isWon = labelText.indexOf('원') !== -1 || (labelText.indexOf('$') === -1 && labelText.indexOf('USD') === -1);
+                        if (isWon) {
+                            var stripped = val.replace(/원$/, '').trim();
+                            if (stripped !== val) {
+                                this._finscopeFormatting = true;
+                                setNativeValue(this, stripped);
+                                this.dispatchEvent(new Event('input', { bubbles: true }));
+                                this._finscopeFormatting = false;
+                            }
                         }
                         var self = this;
                         setTimeout(function() {
@@ -1359,7 +1366,7 @@ def inject_currency_input_script():
                 // 4. 클릭 시: 0원이면 공란으로 클리어
                 input.addEventListener('click', function() {
                     var val = this.value.trim();
-                    if (val === '0원' || val === '0' || val === '$0' || val === '$0.00' || val === '0.0' || val === '0.00') {
+                    if (val === '0원' || val === '0' || val === '$0' || val === '$0.00' || val === '0.0' || val === '0.00' || val === '$0.0') {
                         this._finscopeFormatting = true;
                         setNativeValue(this, '');
                         this.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1367,10 +1374,10 @@ def inject_currency_input_script():
                     }
                 });
 
-                // 5. 블러 시: 유효 금액이면 '원' 접미사 부여, 미입력/0원이면 공란 유지 (placeholder '0원' 노출)
+                // 5. 블러 시: 유효 금액이면 서식 부여, 미입력/0원이면 공란 유지 (placeholder 노출)
                 input.addEventListener('blur', function() {
                     var val = this.value.trim();
-                    var isWon = labelText.indexOf('원') !== -1 || labelText.indexOf('$') === -1;
+                    var isWon = labelText.indexOf('원') !== -1 || (labelText.indexOf('$') === -1 && labelText.indexOf('USD') === -1);
                     var clean = isWon ? val.replace(/[^\\d]/g, '') : val.replace(/[^\\d.]/g, '');
 
                     if (!clean || clean === '' || parseFloat(clean) === 0) {
@@ -1563,6 +1570,18 @@ def render_currency_input(
             st.session_state[widget_key] = f"{int(raw_val):,}원" if is_krw else f"${raw_val:,.2f}"
         else:
             st.session_state[widget_key] = ""
+    else:
+        # 시장 구분 전환 등으로 세션 상태에 저장된 통화 기호가 불일치하는 경우 자동 동기화
+        curr_str = str(st.session_state.get(widget_key, "")).strip()
+        if curr_str:
+            if is_krw and "$" in curr_str:
+                cleaned = re.sub(r"[^\d.]", "", curr_str)
+                num = float(cleaned) if cleaned else 0.0
+                st.session_state[widget_key] = f"{int(num):,}원" if num > 0 else ""
+            elif not is_krw and "원" in curr_str:
+                cleaned = re.sub(r"[^\d.]", "", curr_str)
+                num = float(cleaned) if cleaned else 0.0
+                st.session_state[widget_key] = f"${num:,.2f}" if num > 0 else ""
 
     user_text = st.text_input(
         label,
